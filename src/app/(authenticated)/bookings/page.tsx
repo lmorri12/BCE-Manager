@@ -63,6 +63,7 @@ function BookingsContent() {
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hideInternal, setHideInternal] = useState(false);
 
   const activeTab = searchParams.get("status") || "ALL";
 
@@ -90,12 +91,23 @@ function BookingsContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Bookings</h1>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideInternal}
+              onChange={(e) => setHideInternal(e.target.checked)}
+              className="h-4 w-4 rounded"
+            />
+            Hide internal
+          </label>
         <Link href="/bookings/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             New Booking
           </Button>
         </Link>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -114,7 +126,7 @@ function BookingsContent() {
             <div className="p-6 text-center text-[var(--muted-foreground)]">
               Loading...
             </div>
-          ) : bookings.length === 0 ? (
+          ) : bookings.filter((b) => !hideInternal || b.chargeModel !== "INTERNAL").length === 0 ? (
             <div className="p-6 text-center text-[var(--muted-foreground)]">
               No bookings found.
             </div>
@@ -134,7 +146,7 @@ function BookingsContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map((b) => {
+                  {bookings.filter((b) => !hideInternal || b.chargeModel !== "INTERNAL").map((b) => {
                     const incompleteTasks = b.tasks.filter(
                       (t) => !t.completed
                     ).length;

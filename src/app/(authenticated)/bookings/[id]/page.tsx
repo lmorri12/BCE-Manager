@@ -90,6 +90,7 @@ export default function BookingDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmForm, setShowConfirmForm] = useState(false);
+  const [conflictInfo, setConflictInfo] = useState<{ conflicts: any[]; savedData: Record<string, unknown> | null }>({ conflicts: [], savedData: null });
 
   const fetchBooking = useCallback(async () => {
     const res = await fetch(`/api/bookings/${params.id}`);
@@ -161,8 +162,6 @@ export default function BookingDetailPage() {
       forceConfirm,
     };
   }
-
-  const [conflictInfo, setConflictInfo] = useState<{ conflicts: any[]; savedData: Record<string, unknown> | null }>({ conflicts: [], savedData: null });
 
   async function handleConfirm(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -328,7 +327,7 @@ export default function BookingDetailPage() {
       {isEnquiry && (
         <PencilDates
           bookingId={booking.id}
-          dates={booking.pencilDates}
+          dates={booking.pencilDates || []}
           onUpdate={fetchBooking}
         />
       )}
@@ -572,14 +571,14 @@ export default function BookingDetailPage() {
       )}
 
       {/* Tasks */}
-      {booking.tasks.length > 0 && (
+      {booking.tasks?.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Tasks</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {booking.tasks.map((task) => (
+              {(booking.tasks || []).map((task) => (
                 <div
                   key={task.id}
                   className="flex items-center gap-3 rounded-md border p-3"
@@ -603,14 +602,14 @@ export default function BookingDetailPage() {
       {!isEnquiry && !isPostEvent && booking.status !== "CLOSED" && (
         <StaffAssignment
           bookingId={booking.id}
-          assignments={booking.staffAssignments}
+          assignments={booking.staffAssignments || []}
           onUpdate={fetchBooking}
         />
       )}
 
       {/* Hire Lines (for Straight Hire bookings) */}
       {booking.chargeModel === "STRAIGHT_HIRE" && !isEnquiry && (
-        <HireLines bookingId={booking.id} lines={booking.hireLineItems} onUpdate={fetchBooking} />
+        <HireLines bookingId={booking.id} lines={booking.hireLineItems || []} onUpdate={fetchBooking} />
       )}
 
       {/* Post-Event Actions */}
