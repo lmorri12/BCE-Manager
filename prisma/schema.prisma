@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_USER
+  BOOKINGS_ADMIN
+  TECH_ADMIN
+  BAR_ADMIN
+}
+
+enum StaffType {
+  TECHNICIAN
+  BAR_VOLUNTEER
+  FOH_VOLUNTEER
+  DUTY_MANAGER
+}
+
+enum BookingStatus {
+  ENQUIRY
+  CONFIRMED
+  IN_PROGRESS
+  READY
+  DAY_OF
+  POST_EVENT
+  CLOSED
+}
+
+enum ChargeModel {
+  STRAIGHT_HIRE
+  BOX_OFFICE_SPLIT
+  INTERNAL
+}
+
+enum TaskArea {
+  TECH
+  BAR
+  FOH
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// ─── User (system login accounts) ────────────────────────────────────────────
+
+model User {
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  passwordHash       String
+  name               String
+  role               Role
+  mustChangePassword Boolean        @default(true)
+  active             Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  notifications      Notification[]
+  bookingsCreated    Booking[]      @relation("BookingsCreated")
+  auditLogs          AuditLog[]
+}
+
+// Staff is tracked via free text in EventStaff.staffName
+// History/counts are derived by querying EventStaff grouped by staffName
+
+// ─── Booking (the central entity: booking = event) ───────────────────────────
+
+model Booking {
+  id String @id @default(cuid())
+
+  status BookingStatus @default(ENQUIRY)
+
+  // Who created this booking in the system
+  createdByUserId String?
+  createdByUser   User?   @relation("BookingsCreated", fields: [createdByUserId], references: [id])
+
+  // Enquiry-stage fields
+  bookerName       String
+  bookerEmail      String?
+  bookerPhone      String?
+  eventNameTBC     String? // may not be known at enquiry stage
+  enquiryDate      DateTime  @default(now())
+  provisionalDates String? // free text for flexibility
+
+  // Confirmation-stage fields (nullable until confirmed)
+  eventName        String?
+  eventDate        DateTime?
+  eventTime        String? // e.g. "19:30"
+  doorsOpenTime    String? // e.g. "19:00"
+  hasInterval      Boolean?
+  techRequirements String?   @db.Text
+  ticketPrice      Decimal?  @db.Decimal(10, 2)
+  ticketSetupInfo  String?   @db.Text
+  techContactName  String?
+  techContactPhone String?
+  techContactEmail String?
+
+  // Staff requirements
+  techRequired Boolean @default(true)
+  barRequired  Boolean @default(true)
+  fohRequired  Boolean @default(true)
+
+  // Checklists
+  marketingAssets Boolean @default(false)
+  riskAssessment  Boolean @default(false)
+  insuranceProof  Boolean @default(false)
+
+  // Charge model
+  chargeModel        ChargeModel @default(INTERNAL)
+  boxOfficeSplitPct  Decimal?    @db.Decimal(5, 2) // e.g. 80.00 for 80%
+
+  // Post-event
+  ticketsReconciled Boolean   @default(false)
+  feedbackNotes     String?   @db.Text
+  closedAt          DateTime?
+
+  // Recurring booking link
+  recurringBookingId   String?
+  recurringBooking     RecurringBooking? @relation("RecurringOccurrences", fields: [recurringBookingId], references: [id])
+  overriddenByBookingId String?
+  overriddenByBooking   Booking?  @relation("OverrideLink", fields: [overriddenByBookingId], references: [id])
+  overrides             Booking[] @relation("OverrideLink")
+
+  // Relations
+  pencilDates      ProvisionalDate[]
+  hireLineItems    HireLineItem[]
+  tasks            BookingTask[]
+  staffAssignments EventStaff[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([eventDate])
+  @@index([recurringBookingId])
+}
+
+// ─── Provisional Dates (pencil dates shown on calendar for enquiries) ────────
+
+model ProvisionalDate {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  notes     String?  // e.g. "morning only", "evening preferred"
+
+  @@index([bookingId])
+  @@index([date])
+}
+
+// ─── Hire Line Items (for straight-hire charge model) ────────────────────────
+
+model HireLineItem {
+  id          String  @id @default(cuid())
+  bookingId   String
+  booking     Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal @db.Decimal(10, 2)
+  sortOrder   Int     @default(0)
+}
+
+// ─── Booking Tasks (spawned on confirmation for each sub-area) ───────────────
+
+model BookingTask {
+  id          String    @id @default(cuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  area        TaskArea
+  description String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([bookingId])
+}
+
+// ─── Event Staff Assignments (free text names, tracked by normalised name) ───
+
+model EventStaff {
+  id        String    @id @default(cuid())
+  bookingId String
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  role      StaffType
+  staffName String    // Free text name
+  staffPhone String?  // Optional contact number
+
+  @@index([bookingId])
+  @@index([staffName])
+}
+
+// ─── Recurring Bookings (community groups) ───────────────────────────────────
+
+model RecurringBooking {
+  id              String    @id @default(cuid())
+  groupName       String
+  contactName     String
+  contactEmail    String?
+  contactPhone    String?
+  daysOfWeek      DayOfWeek[]
+  startTime       String    // e.g. "18:00"
+  endTime         String    // e.g. "21:00"
+  recurrenceStart DateTime
+  recurrenceEnd   DateTime?
+  notes           String?   @db.Text
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  occurrences Booking[] @relation("RecurringOccurrences")
+}
+
+// ─── Notifications (in-app only) ─────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String   // Denormalised so log survives user deletion
+  action    String   // e.g. "BOOKING_CREATED", "BOOKING_UPDATED", "BOOKING_CONFIRMED"
+  entity    String   // e.g. "Booking", "User", "RecurringBooking"
+  entityId  String?  // ID of the affected record
+  summary   String   // Human-readable description
+  changes   String?  @db.Text // JSON diff of changed fields
+  createdAt DateTime @default(now())
+
+  @@index([entityId])
+  @@index([createdAt])
+}

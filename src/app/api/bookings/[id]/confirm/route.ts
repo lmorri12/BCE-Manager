@@ -1,0 +1,126 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requireRole, handleApiError } from "@/lib/authorize";
+import { notifyBookingConfirmed } from "@/lib/notifications";
+import { findConflicts } from "@/lib/conflicts";
+import { auditLog } from "@/lib/audit";
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireRole("SUPER_USER", "BOOKINGS_ADMIN");
+    const { id } = await params;
+
+    const data = await request.json();
+
+    // Check for conflicts unless explicitly overridden
+    if (data.eventDate && !data.forceConfirm) {
+      const conflicts = await findConflicts(new Date(data.eventDate), id);
+      if (conflicts.length > 0) {
+        return NextResponse.json(
+          {
+            error: "conflict",
+            message: `There ${conflicts.length === 1 ? "is" : "are"} ${conflicts.length} other booking${conflicts.length === 1 ? "" : "s"} on this date.`,
+            conflicts,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    const techRequired = data.techRequired ?? true;
+    const barRequired = data.barRequired ?? true;
+    const fohRequired = data.fohRequired ?? true;
+
+    // Update the booking with full confirmation details
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: "CONFIRMED",
+        eventName: data.eventName,
+        eventDate: data.eventDate ? new Date(data.eventDate) : null,
+        eventTime: data.eventTime || null,
+        doorsOpenTime: data.doorsOpenTime || null,
+        hasInterval: data.hasInterval ?? null,
+        techRequirements: data.techRequirements || null,
+        ticketPrice: data.ticketPrice ? parseFloat(data.ticketPrice) : null,
+        ticketSetupInfo: data.ticketSetupInfo || null,
+        techContactName: data.techContactName || null,
+        techContactPhone: data.techContactPhone || null,
+        techContactEmail: data.techContactEmail || null,
+        chargeModel: data.chargeModel || "INTERNAL",
+        boxOfficeSplitPct: data.boxOfficeSplitPct
+          ? parseFloat(data.boxOfficeSplitPct)
+          : null,
+        techRequired,
+        barRequired,
+        fohRequired,
+        marketingAssets: data.marketingAssets ?? false,
+        riskAssessment: data.riskAssessment ?? false,
+        insuranceProof: data.insuranceProof ?? false,
+      },
+    });
+
+    // Spawn booking tasks only for required sub-areas
+    const tasks: { bookingId: string; area: "TECH" | "BAR" | "FOH"; description: string }[] = [];
+
+    if (techRequired) {
+      tasks.push({
+        bookingId: id,
+        area: "TECH",
+        description: "Assign technician",
+      });
+    }
+
+    if (barRequired) {
+      tasks.push({
+        bookingId: id,
+        area: "BAR",
+        description: "Assign bar volunteer",
+      });
+    }
+
+    if (fohRequired) {
+      tasks.push({
+        bookingId: id,
+        area: "FOH",
+        description: "Assign FoH volunteer and Duty Manager",
+      });
+    }
+
+    if (tasks.length > 0) {
+      await prisma.bookingTask.createMany({ data: tasks });
+
+      // Move to IN_PROGRESS since tasks have been spawned
+      await prisma.booking.update({
+        where: { id },
+        data: { status: "IN_PROGRESS" },
+      });
+    }
+
+    // Send notifications to relevant admins
+    await notifyBookingConfirmed(booking);
+
+    const updated = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        tasks: true,
+        staffAssignments: true,
+        hireLineItems: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+
+    await auditLog({
+      action: "BOOKING_CONFIRMED",
+      entity: "Booking",
+      entityId: id,
+      summary: `Confirmed "${booking.eventName}" on ${booking.eventDate ? new Date(booking.eventDate).toLocaleDateString("en-GB") : "TBC"}`,
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
