@@ -45,6 +45,12 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
   },
   {
+    label: "Reports",
+    href: "/reports",
+    icon: "BarChart3",
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN"],
+  },
+  {
     label: "Users",
     href: "/admin/users",
     icon: "Shield",
@@ -55,6 +61,18 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/admin/audit",
     icon: "ScrollText",
     roles: ["SUPER_USER"],
+  },
+  {
+    label: "Data",
+    href: "/admin/data",
+    icon: "Database",
+    roles: ["SUPER_USER"],
+  },
+  {
+    label: "Help",
+    href: "/help",
+    icon: "HelpCircle",
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
   },
 ];
 

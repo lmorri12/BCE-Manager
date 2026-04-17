@@ -14,6 +14,9 @@ import {
   Users,
   Shield,
   ScrollText,
+  BarChart3,
+  Database,
+  HelpCircle,
   X,
 } from "lucide-react";
 
@@ -25,7 +28,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ClipboardList,
   Users,
   Shield,
+  BarChart3,
   ScrollText,
+  Database,
+  HelpCircle,
 };
 
 export function Sidebar({
@@ -49,19 +55,19 @@ export function Sidebar({
         open ? "translate-x-0" : "-translate-x-full"
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+      <div className="relative flex h-14 items-center justify-center bg-white/95 backdrop-blur-sm mx-3 mt-3 mb-2 rounded-xl px-3 shadow-sm">
         <Link href="/" onClick={onClose} className="block">
           <img
             src="/images/logo-text.png"
             alt="Biggar Corn Exchange"
-            className="h-7"
+            className="h-5"
           />
         </Link>
-        <button onClick={onClose} className="lg:hidden text-white/70 hover:text-white">
+        <button onClick={onClose} className="absolute right-2 lg:hidden text-[var(--bce-grey)] hover:text-[var(--bce-grey)]">
           <X className="h-5 w-5" />
         </button>
       </div>
-      <nav className="mt-4 space-y-1 px-3">
+      <nav className="mt-3 space-y-0.5 px-3">
         {visibleItems.map((item) => {
           const Icon = iconMap[item.icon];
           const isActive =
@@ -74,13 +80,13 @@ export function Sidebar({
               href={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
                 isActive
-                  ? "bg-[var(--sidebar-hover)] text-white font-medium"
-                  : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]"
+                  ? "bg-white/12 text-white font-medium shadow-sm border-l-[3px] border-[var(--accent)] pl-[9px]"
+                  : "text-[var(--sidebar-text)]/80 hover:bg-white/8 hover:text-white border-l-[3px] border-transparent pl-[9px]"
               )}
             >
-              {Icon && <Icon className="h-5 w-5" />}
+              {Icon && <Icon className={cn("h-[18px] w-[18px]", isActive ? "text-[var(--accent)]" : "")} />}
               {item.label}
             </Link>
           );

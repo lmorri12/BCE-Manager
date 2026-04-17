@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,33 +37,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--muted)]">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[var(--muted)] to-[var(--background)]">
+      <Card className="w-full max-w-sm mx-4">
+        <CardHeader className="text-center space-y-4 pb-2">
           <div className="flex justify-center">
             <img
               src="/images/logo-square.png"
               alt="Biggar Corn Exchange"
-              className="h-28"
+              className="h-24"
             />
           </div>
-          <CardDescription>Booking Management System</CardDescription>
+          <CardDescription className="text-xs uppercase tracking-widest font-medium">
+            Booking Management
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 p-3 text-sm text-[var(--destructive)]">
                 {error}
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Username</Label>
               <Input
                 id="email"
                 name="email"
                 type="text"
                 required
-                placeholder="Username or email"
+                placeholder="Enter your username"
+                autoFocus
               />
             </div>
             <div className="space-y-2">
@@ -73,6 +76,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
+                placeholder="Enter your password"
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>

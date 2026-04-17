@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         techRequired: true,
         barRequired: true,
         fohRequired: true,
+        stairClimberRequired: true,
         createdByUser: { select: { name: true } },
         staffAssignments: {
           select: {

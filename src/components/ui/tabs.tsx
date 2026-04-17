@@ -57,7 +57,7 @@ export function TabsTrigger({ value, children, className }: TabsTriggerProps) {
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
         isActive
-          ? "bg-white text-[var(--foreground)] shadow-sm"
+          ? "bg-[var(--background)] text-[var(--foreground)] shadow-sm"
           : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
         className
       )}

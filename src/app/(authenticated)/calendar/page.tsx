@@ -31,27 +31,27 @@ const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 function getEventStyle(booking: CalendarBooking) {
   if (booking.isPencilDate || booking.status === "ENQUIRY") {
     return {
-      bg: "bg-amber-50",
-      border: "border-l-amber-400",
-      dot: "bg-amber-400",
-      text: "text-amber-900",
+      bg: "bg-[#FCD7AB]/30",
+      border: "border-l-[var(--bce-gold)]",
+      dot: "bg-[var(--bce-gold)]",
+      text: "text-[#7a5a1a]",
       label: "Pencil",
     };
   }
   if (booking.chargeModel === "INTERNAL") {
     return {
-      bg: "bg-emerald-50",
-      border: "border-l-emerald-500",
-      dot: "bg-emerald-500",
-      text: "text-emerald-900",
+      bg: "bg-[#A9E4C2]/30",
+      border: "border-l-[var(--bce-green)]",
+      dot: "bg-[var(--bce-green)]",
+      text: "text-[#1a5a2e]",
       label: "Internal",
     };
   }
   return {
-    bg: "bg-blue-50",
-    border: "border-l-blue-500",
-    dot: "bg-blue-500",
-    text: "text-blue-900",
+    bg: "bg-[#85E2FF]/30",
+    border: "border-l-[var(--bce-blue)]",
+    dot: "bg-[var(--bce-blue)]",
+    text: "text-[#005a7a]",
     label: "Confirmed",
   };
 }
@@ -155,7 +155,7 @@ export default function CalendarPage() {
           </div>
           <button
             onClick={goToday}
-            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+            className="px-3 py-1.5 text-sm font-medium text-[var(--bce-blue)] hover:bg-[#85E2FF]/20 rounded-md transition-colors"
           >
             Today
           </button>
@@ -164,13 +164,13 @@ export default function CalendarPage() {
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Pencil
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--bce-gold)]" /> Pencil
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Confirmed
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--bce-blue)]" /> Confirmed
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Internal
+            <span className="h-2.5 w-2.5 rounded-full bg-[var(--bce-green)]" /> Internal
           </span>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function CalendarPage() {
                       className={`
                         border-r border-gray-50 last:border-r-0 p-1 cursor-pointer transition-all min-h-[80px] overflow-hidden
                         ${!isCurrentMonth ? "bg-gray-25" : isWeekend ? "bg-gray-50/30" : "bg-white"}
-                        ${isSelected ? "ring-2 ring-blue-500 ring-inset bg-blue-50/30" : "hover:bg-gray-50/50"}
+                        ${isSelected ? "ring-2 ring-[var(--bce-blue)] ring-inset bg-[#85E2FF]/20" : "hover:bg-gray-50/50"}
                       `}
                     >
                       {/* Date number */}
@@ -215,7 +215,7 @@ export default function CalendarPage() {
                         <span
                           className={`
                             text-xs leading-6
-                            ${isToday ? "flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white font-semibold" : ""}
+                            ${isToday ? "flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bce-blue)] text-white font-semibold" : ""}
                             ${!isCurrentMonth ? "text-gray-300" : isToday ? "" : "text-gray-700 font-medium"}
                           `}
                         >
@@ -283,10 +283,20 @@ export default function CalendarPage() {
               </button>
             </div>
 
+            {/* Add booking button */}
+            <div className="px-3 pt-3">
+              <button
+                onClick={() => router.push(`/bookings/new?date=${selectedDay}`)}
+                className="w-full rounded-md border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 hover:border-blue-400 hover:text-blue-600 transition-colors"
+              >
+                + New booking on this day
+              </button>
+            </div>
+
             {/* Events list */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {dayBookings.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">
+                <p className="text-sm text-gray-400 text-center py-4">
                   No events on this day
                 </p>
               ) : (

@@ -28,6 +28,12 @@ type RecurringBooking = {
   endTime: string;
   recurrenceStart: string;
   recurrenceEnd: string | null;
+  chargeModel: string;
+  ticketPrice: string | null;
+  techRequired: boolean;
+  barRequired: boolean;
+  fohRequired: boolean;
+  stairClimberRequired: boolean;
   notes: string | null;
   active: boolean;
   occurrences: Occurrence[];
@@ -75,6 +81,12 @@ export default function EditRecurringPage() {
         endTime: fd.get("endTime"),
         recurrenceStart: fd.get("recurrenceStart"),
         recurrenceEnd: fd.get("recurrenceEnd") || null,
+        chargeModel: fd.get("chargeModel") || "INTERNAL",
+        ticketPrice: fd.get("ticketPrice") || null,
+        techRequired: fd.get("techRequired") === "on",
+        barRequired: fd.get("barRequired") === "on",
+        fohRequired: fd.get("fohRequired") === "on",
+        stairClimberRequired: fd.get("stairClimberRequired") === "on",
         notes: fd.get("notes"),
         active: fd.get("active") === "on",
       }),
@@ -176,13 +188,44 @@ export default function EditRecurringPage() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Charge Model</Label>
+                <select name="chargeModel" defaultValue={item.chargeModel} className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm">
+                  <option value="INTERNAL">Internal (Free)</option>
+                  <option value="STRAIGHT_HIRE">Straight Hire</option>
+                  <option value="BOX_OFFICE_SPLIT">Box Office Split</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Ticket Price</Label>
+                <Input name="ticketPrice" type="number" step="0.01" defaultValue={item.ticketPrice ? Number(item.ticketPrice) : ""} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Staff Requirements</Label>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="techRequired" defaultChecked={item.techRequired} className="h-4 w-4" /> Tech
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="barRequired" defaultChecked={item.barRequired} className="h-4 w-4" /> Bar
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="fohRequired" defaultChecked={item.fohRequired} className="h-4 w-4" /> FoH
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="stairClimberRequired" defaultChecked={item.stairClimberRequired} className="h-4 w-4" /> Stair Climber
+                </label>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Notes</Label>
               <textarea
                 name="notes"
                 rows={2}
                 defaultValue={item.notes || ""}
-                className="flex w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                className="flex w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
               />
             </div>
             <div className="flex items-center gap-2">

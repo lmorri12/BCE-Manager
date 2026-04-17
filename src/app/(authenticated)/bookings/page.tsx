@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
@@ -64,6 +65,7 @@ function BookingsContent() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [hideInternal, setHideInternal] = useState(false);
+  const [search, setSearch] = useState("");
 
   const activeTab = searchParams.get("status") || "ALL";
 
@@ -110,6 +112,13 @@ function BookingsContent() {
         </div>
       </div>
 
+      <Input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by event name, booker, or date..."
+        className="max-w-md"
+      />
+
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="flex-wrap">
           {STATUS_TABS.map((tab) => (
@@ -126,7 +135,17 @@ function BookingsContent() {
             <div className="p-6 text-center text-[var(--muted-foreground)]">
               Loading...
             </div>
-          ) : bookings.filter((b) => !hideInternal || b.chargeModel !== "INTERNAL").length === 0 ? (
+          ) : bookings.filter((b) => {
+                    if (hideInternal && b.chargeModel === "INTERNAL") return false;
+                    if (search) {
+                      const s = search.toLowerCase();
+                      const name = (b.eventName || b.eventNameTBC || "").toLowerCase();
+                      const booker = b.bookerName.toLowerCase();
+                      const date = b.eventDate ? new Date(b.eventDate).toLocaleDateString("en-GB") : "";
+                      if (!name.includes(s) && !booker.includes(s) && !date.includes(s)) return false;
+                    }
+                    return true;
+                  }).length === 0 ? (
             <div className="p-6 text-center text-[var(--muted-foreground)]">
               No bookings found.
             </div>
@@ -146,7 +165,17 @@ function BookingsContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.filter((b) => !hideInternal || b.chargeModel !== "INTERNAL").map((b) => {
+                  {bookings.filter((b) => {
+                    if (hideInternal && b.chargeModel === "INTERNAL") return false;
+                    if (search) {
+                      const s = search.toLowerCase();
+                      const name = (b.eventName || b.eventNameTBC || "").toLowerCase();
+                      const booker = b.bookerName.toLowerCase();
+                      const date = b.eventDate ? new Date(b.eventDate).toLocaleDateString("en-GB") : "";
+                      if (!name.includes(s) && !booker.includes(s) && !date.includes(s)) return false;
+                    }
+                    return true;
+                  }).map((b) => {
                     const incompleteTasks = b.tasks.filter(
                       (t) => !t.completed
                     ).length;

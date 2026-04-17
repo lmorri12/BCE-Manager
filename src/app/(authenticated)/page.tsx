@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState({ enquiry: 0, confirmed: 0, inProgress: 0 });
   const [upcomingEvents, setUpcomingEvents] = useState<Booking[]>([]);
+  const [myTasks, setMyTasks] = useState<Booking[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [loading, setLoading] = useState(true);
   const [hideInternal, setHideInternal] = useState(false);
@@ -65,6 +66,28 @@ export default function DashboardPage() {
           .sort((a, b) => new Date(a.eventDate!).getTime() - new Date(b.eventDate!).getTime())
           .slice(0, 5);
         setUpcomingEvents(upcoming);
+
+        // My tasks: bookings needing current user's role attention
+        const role = session?.user?.role;
+        if (role && role !== "SUPER_USER" && role !== "BOOKINGS_ADMIN") {
+          const areaMap: Record<string, string[]> = {
+            TECH_ADMIN: ["TECHNICIAN"],
+            BAR_ADMIN: ["BAR_VOLUNTEER"],
+          };
+          const myStaffTypes = areaMap[role] || [];
+          const needingAttention = bookings.filter((b: any) => {
+            if (b.status !== "IN_PROGRESS" && b.status !== "CONFIRMED") return false;
+            const tasks = b.tasks || [];
+            const assignments = b.staffAssignments || [];
+            return tasks.some((t: any) => {
+              if (t.completed) return false;
+              const areaToStaff: Record<string, string[]> = { TECH: ["TECHNICIAN"], BAR: ["BAR_VOLUNTEER"], FOH: ["FOH_VOLUNTEER", "DUTY_MANAGER"] };
+              const neededTypes = areaToStaff[t.area] || [];
+              return neededTypes.some((st) => myStaffTypes.includes(st));
+            });
+          });
+          setMyTasks(needingAttention);
+        }
       }
 
       if (conflictsRes.ok) {
@@ -130,6 +153,37 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* My Tasks */}
+      {myTasks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Pending Assignments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {myTasks.map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/bookings/${b.id}`}
+                  className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 p-3 hover:bg-blue-100 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium">{b.eventName || b.eventNameTBC || "Unnamed"}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      {b.eventDate
+                        ? new Date(b.eventDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })
+                        : "Date TBC"}
+                      {" — "}{b.bookerName}
+                    </p>
+                  </div>
+                  <Badge variant="warning">Needs staff</Badge>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Stats Cards */}

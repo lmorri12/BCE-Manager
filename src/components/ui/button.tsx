@@ -3,21 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-[var(--background)] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90",
-        destructive: "bg-[var(--destructive)] text-white hover:bg-[var(--destructive)]/90",
-        outline: "border border-[var(--border)] bg-transparent hover:bg-[var(--muted)]",
-        secondary: "bg-[var(--muted)] text-[var(--foreground)] hover:bg-[var(--muted)]/80",
+        default: "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm hover:brightness-110",
+        destructive: "bg-[var(--destructive)] text-white shadow-sm hover:brightness-110",
+        outline: "border border-[var(--border)] bg-[var(--background)] shadow-sm hover:bg-[var(--muted)] hover:border-[var(--muted-foreground)]/30",
+        secondary: "bg-[var(--muted)] text-[var(--foreground)] shadow-sm hover:bg-[var(--border)]",
         ghost: "hover:bg-[var(--muted)]",
         link: "text-[var(--primary)] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        sm: "h-9 rounded-lg px-3 text-xs",
+        lg: "h-11 rounded-lg px-8",
         icon: "h-10 w-10",
       },
     },

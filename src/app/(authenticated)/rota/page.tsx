@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Printer } from "lucide-react";
 
 type StaffAssignment = {
   id: string;
@@ -26,6 +27,7 @@ type RotaBooking = {
   techRequired: boolean;
   barRequired: boolean;
   fohRequired: boolean;
+  stairClimberRequired: boolean;
   createdByUser: { name: string } | null;
   staffAssignments: StaffAssignment[];
   tasks: { area: string; completed: boolean }[];
@@ -70,7 +72,12 @@ export default function RotaPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Event Rota</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Event Rota</h1>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="print:hidden">
+            <Printer className="mr-1 h-4 w-4" /> Print
+          </Button>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-sm text-[var(--muted-foreground)]">From</label>
@@ -105,7 +112,7 @@ export default function RotaPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left bg-[var(--muted)]">
+                  <tr className="border-b border-[var(--border)] text-left text-[var(--muted-foreground)]">
                     <th className="p-3 font-medium">Date</th>
                     <th className="p-3 font-medium">Time</th>
                     <th className="p-3 font-medium">Event</th>
@@ -115,6 +122,7 @@ export default function RotaPage() {
                     <th className="p-3 font-medium">Bar</th>
                     <th className="p-3 font-medium">FoH</th>
                     <th className="p-3 font-medium">Duty Manager</th>
+                    <th className="p-3 font-medium">Stair Climber</th>
                     <th className="p-3 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -124,11 +132,12 @@ export default function RotaPage() {
                     const bar = getStaffForRole(b.staffAssignments, "BAR_VOLUNTEER");
                     const foh = getStaffForRole(b.staffAssignments, "FOH_VOLUNTEER");
                     const dm = getStaffForRole(b.staffAssignments, "DUTY_MANAGER");
+                    const stair = getStaffForRole(b.staffAssignments, "STAIR_CLIMBER_OPERATOR");
 
                     return (
                       <tr
                         key={b.id}
-                        className="border-b cursor-pointer hover:bg-[var(--muted)] transition-colors"
+                        className="border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[var(--muted)]"
                         onClick={() => router.push(`/bookings/${b.id}`)}
                       >
                         <td className="p-3 whitespace-nowrap">
@@ -171,6 +180,11 @@ export default function RotaPage() {
                         <td className="p-3">
                           {b.fohRequired
                             ? dm || <span className="text-[var(--warning)]">Needed</span>
+                            : <span className="text-[var(--muted-foreground)]">N/A</span>}
+                        </td>
+                        <td className="p-3">
+                          {b.stairClimberRequired
+                            ? stair || <span className="text-[var(--warning)]">Needed</span>
                             : <span className="text-[var(--muted-foreground)]">N/A</span>}
                         </td>
                         <td className="p-3">

@@ -1,30 +1,118 @@
 @import "tailwindcss";
 
+/* BCE Brand Guidelines v1 — Colour Palette */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  --sidebar-bg: #1e293b;
+  --foreground: #374151;
+  --card: #ffffff;
+  --sidebar-bg: #51545D;
   --sidebar-text: #e2e8f0;
-  --sidebar-hover: #334155;
-  --primary: #2563eb;
+  --sidebar-hover: rgba(255,255,255,0.1);
+  --primary: #009CCD;
   --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --destructive: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --accent: #F79B2E;
+  --muted: #f8f9fb;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --destructive: #BB3D43;
+  --success: #37AD68;
+  --warning: #F79B2E;
+  --purple: #805791;
+  --ring: #009CCD;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --bce-blue: #009CCD;
+  --bce-gold: #F79B2E;
+  --bce-grey: #51545D;
+  --bce-grey-light: #B7B9C0;
+  --bce-green: #37AD68;
+  --bce-purple: #805791;
+  --bce-red: #BB3D43;
+  --bce-blue-light: #85E2FF;
+  --bce-gold-light: #FCD7AB;
+  --bce-green-light: #A9E4C2;
+  --radius: 0.625rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --card: #1e293b;
+  --sidebar-bg: #0c1222;
+  --sidebar-text: #cbd5e1;
+  --sidebar-hover: rgba(255,255,255,0.08);
+  --primary: #38bdf8;
+  --primary-foreground: #0f172a;
+  --accent: #F79B2E;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --destructive: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --ring: #38bdf8;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
 }
 
+/* BCE Primary Typeface: Arial Nova with Arial fallback */
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Arial Nova", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions for theme switching */
+*, *::before, *::after {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Better scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Form element polish */
+select, input[type="date"], input[type="time"] {
+  color-scheme: light;
+}
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Print styles */
+@media print {
+  aside, header, .print\:hidden {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  table {
+    font-size: 11px;
+  }
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
 }

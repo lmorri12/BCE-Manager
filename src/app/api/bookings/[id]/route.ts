@@ -18,6 +18,8 @@ export async function GET(
         staffAssignments: true,
         hireLineItems: { orderBy: { sortOrder: "asc" } },
         pencilDates: { orderBy: { date: "asc" } },
+        attachments: { orderBy: { createdAt: "desc" }, select: { id: true, fileName: true, fileType: true, fileTypeOther: true, fileSize: true, createdAt: true } },
+        overrides: { select: { id: true, eventName: true, bookerName: true } },
         recurringBooking: { select: { groupName: true } },
         createdByUser: { select: { id: true, name: true } },
       },
@@ -84,6 +86,10 @@ export async function PUT(
         tasks: true,
         staffAssignments: true,
         hireLineItems: { orderBy: { sortOrder: "asc" } },
+        pencilDates: { orderBy: { date: "asc" } },
+        attachments: { orderBy: { createdAt: "desc" }, select: { id: true, fileName: true, fileType: true, fileTypeOther: true, fileSize: true, createdAt: true } },
+        overrides: { select: { id: true, eventName: true, bookerName: true } },
+        recurringBooking: { select: { groupName: true } },
         createdByUser: { select: { id: true, name: true } },
       },
     });
@@ -91,8 +97,10 @@ export async function PUT(
     const trackFields = [
       "status", "bookerName", "bookerEmail", "bookerPhone",
       "eventName", "eventNameTBC", "eventDate", "eventTime",
-      "doorsOpenTime", "chargeModel", "techRequirements",
-      "techRequired", "barRequired", "fohRequired",
+      "doorsOpenTime", "buildingAccessTime", "chargeModel", "techRequirements",
+      "techRequired", "barRequired", "fohRequired", "stairClimberRequired",
+      "feedbackFormUrl", "roomLayout", "roomLayoutOther", "setupTime",
+      "applicationFormSent", "displacedPartyNotified",
     ];
     const changes = before ? diffChanges(before as any, booking as any, trackFields) : null;
     const eventName = booking.eventName || booking.eventNameTBC || "Unnamed";

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { signOut } from "next-auth/react";
-import { Bell, LogOut, User, ChevronDown, Menu } from "lucide-react";
+import { Bell, LogOut, User, ChevronDown, Menu, Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getRoleLabel } from "@/lib/roles";
@@ -53,7 +53,6 @@ export function Topbar({
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -75,31 +74,48 @@ export function Topbar({
   }
 
   return (
-    <header className="fixed left-0 lg:left-64 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border)] bg-white px-4 lg:px-6">
+    <header className="fixed left-0 lg:left-64 right-0 top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-md px-4 lg:px-6">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuToggle}>
         <Menu className="h-5 w-5" />
       </Button>
       <div className="hidden lg:block" />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        {/* Dark Mode Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-lg"
+          onClick={() => {
+            const html = document.documentElement;
+            const isDark = html.getAttribute("data-theme") === "dark";
+            html.setAttribute("data-theme", isDark ? "light" : "dark");
+            localStorage.setItem("theme", isDark ? "light" : "dark");
+          }}
+        >
+          <Sun className="h-[18px] w-[18px] hidden [html[data-theme=dark]_&]:block" />
+          <Moon className="h-[18px] w-[18px] block [html[data-theme=dark]_&]:hidden" />
+        </Button>
+
         {/* Notification Bell */}
         <div ref={notifRef} className="relative">
           <Button
             variant="ghost"
             size="icon"
+            className="rounded-lg"
             onClick={() => setShowNotifications(!showNotifications)}
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-[18px] w-[18px]" />
             {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--destructive)] text-xs text-white">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--destructive)] text-[10px] font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </Button>
 
           {showNotifications && (
-            <div className="absolute right-0 top-12 w-80 rounded-lg border border-[var(--border)] bg-white shadow-lg">
-              <div className="flex items-center justify-between border-b p-3">
-                <span className="font-medium">Notifications</span>
+            <div className="absolute right-0 top-11 w-80 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-md)] overflow-hidden">
+              <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+                <span className="text-sm font-semibold">Notifications</span>
                 <Link
                   href="/notifications"
                   className="text-xs text-[var(--primary)] hover:underline"
@@ -110,23 +126,23 @@ export function Topbar({
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <p className="p-4 text-center text-sm text-[var(--muted-foreground)]">
+                  <p className="p-6 text-center text-sm text-[var(--muted-foreground)]">
                     No new notifications
                   </p>
                 ) : (
                   notifications.slice(0, 5).map((n) => (
                     <div
                       key={n.id}
-                      className={`cursor-pointer border-b p-3 text-sm hover:bg-[var(--muted)] ${
-                        !n.read ? "bg-blue-50" : ""
+                      className={`cursor-pointer border-b border-[var(--border)] px-4 py-3 text-sm transition-colors hover:bg-[var(--muted)] ${
+                        !n.read ? "bg-[var(--primary)]/5" : ""
                       }`}
                       onClick={() => {
                         markAsRead(n.id);
                         if (n.link) window.location.href = n.link;
                       }}
                     >
-                      <p className="font-medium">{n.title}</p>
-                      <p className="text-[var(--muted-foreground)]">
+                      <p className="font-medium text-[var(--foreground)]">{n.title}</p>
+                      <p className="text-[var(--muted-foreground)] mt-0.5 leading-snug">
                         {n.message}
                       </p>
                     </div>
@@ -141,32 +157,36 @@ export function Topbar({
         <div ref={userRef} className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-[var(--muted)]"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--muted)]"
           >
-            <User className="h-5 w-5" />
-            <span className="text-sm">{userName}</span>
-            <Badge variant="secondary" className="text-xs">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+              <User className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-sm font-medium hidden sm:inline">{userName}</span>
+            <Badge variant="secondary" className="hidden md:inline-flex">
               {getRoleLabel(userRole)}
             </Badge>
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 top-12 w-48 rounded-lg border border-[var(--border)] bg-white shadow-lg">
+            <div className="absolute right-0 top-11 w-48 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-md)] overflow-hidden">
               <Link
                 href="/change-password"
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--muted)]"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--muted)]"
                 onClick={() => setShowUserMenu(false)}
               >
                 Change Password
               </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-[var(--muted)]"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </button>
+              <div className="border-t border-[var(--border)]">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[var(--destructive)] transition-colors hover:bg-[var(--muted)]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              </div>
             </div>
           )}
         </div>

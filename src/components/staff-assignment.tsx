@@ -26,6 +26,7 @@ const STAFF_TYPES = [
   { value: "BAR_VOLUNTEER", label: "Bar Volunteer" },
   { value: "FOH_VOLUNTEER", label: "FoH Volunteer" },
   { value: "DUTY_MANAGER", label: "Duty Manager" },
+  { value: "STAIR_CLIMBER_OPERATOR", label: "Stair Climber Operator" },
 ];
 
 export function StaffAssignment({
@@ -144,7 +145,7 @@ export function StaffAssignment({
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="flex h-10 rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm"
+                className="flex h-10 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
               >
                 <option value="">Select role...</option>
                 {STAFF_TYPES.map((t) => (
@@ -167,7 +168,7 @@ export function StaffAssignment({
                 placeholder="Type a name..."
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-10 mt-1 rounded-md border border-[var(--border)] bg-white shadow-lg max-h-40 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 z-10 mt-1 rounded-md border border-[var(--border)] bg-[var(--background)] shadow-lg max-h-40 overflow-y-auto">
                   {filteredSuggestions.map((s, i) => (
                     <button
                       key={`${s.staffName}-${s.role}-${i}`}

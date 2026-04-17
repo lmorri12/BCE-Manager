@@ -77,6 +77,12 @@ export default function RecurringPage() {
         endTime: fd.get("endTime"),
         recurrenceStart: fd.get("recurrenceStart"),
         recurrenceEnd: fd.get("recurrenceEnd") || null,
+        chargeModel: fd.get("chargeModel") || "INTERNAL",
+        ticketPrice: fd.get("ticketPrice") || null,
+        techRequired: fd.get("techRequired") === "on",
+        barRequired: fd.get("barRequired") === "on",
+        fohRequired: fd.get("fohRequired") === "on",
+        stairClimberRequired: fd.get("stairClimberRequired") === "on",
         notes: fd.get("notes"),
       }),
     });
@@ -182,6 +188,41 @@ export default function RecurringPage() {
                   <Input name="recurrenceEnd" type="date" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Charge Model</Label>
+                  <select
+                    name="chargeModel"
+                    defaultValue="INTERNAL"
+                    className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                  >
+                    <option value="INTERNAL">Internal (Free)</option>
+                    <option value="STRAIGHT_HIRE">Straight Hire</option>
+                    <option value="BOX_OFFICE_SPLIT">Box Office Split</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Ticket Price (optional)</Label>
+                  <Input name="ticketPrice" type="number" step="0.01" min="0" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Staff Requirements</Label>
+                <div className="flex gap-6 flex-wrap">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="techRequired" className="h-4 w-4" /> Tech
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="barRequired" className="h-4 w-4" /> Bar
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="fohRequired" className="h-4 w-4" /> FoH
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="stairClimberRequired" className="h-4 w-4" /> Stair Climber
+                  </label>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label>Notes</Label>
                 <textarea
@@ -218,6 +259,7 @@ export default function RecurringPage() {
                   <th className="p-3 font-medium">Contact</th>
                   <th className="p-3 font-medium">Days</th>
                   <th className="p-3 font-medium">Time</th>
+                  <th className="p-3 font-medium">Charge</th>
                   <th className="p-3 font-medium">Bookings</th>
                   <th className="p-3 font-medium">Status</th>
                   <th className="p-3 font-medium"></th>
@@ -233,6 +275,11 @@ export default function RecurringPage() {
                     </td>
                     <td className="p-3 text-[var(--muted-foreground)]">
                       {item.startTime} - {item.endTime}
+                    </td>
+                    <td className="p-3">
+                      <Badge variant="outline">
+                        {(item as any).chargeModel === "STRAIGHT_HIRE" ? "Hire" : (item as any).chargeModel === "BOX_OFFICE_SPLIT" ? "Box Office" : "Internal"}
+                      </Badge>
                     </td>
                     <td className="p-3">{item._count.occurrences}</td>
                     <td className="p-3">

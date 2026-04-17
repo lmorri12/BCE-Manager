@@ -68,13 +68,17 @@ export async function POST(
       eventName: string;
       eventDate: Date;
       eventTime: string;
-      status: "CONFIRMED";
-      chargeModel: "INTERNAL";
+      status: "CONFIRMED" | "READY";
+      chargeModel: typeof recurring.chargeModel;
+      ticketPrice?: number;
       recurringBookingId: string;
       techRequired: boolean;
       barRequired: boolean;
       fohRequired: boolean;
+      stairClimberRequired: boolean;
     }[] = [];
+
+    const needsStaff = recurring.techRequired || recurring.barRequired || recurring.fohRequired || recurring.stairClimberRequired;
 
     const skippedConflicts: string[] = [];
 
@@ -95,12 +99,14 @@ export async function POST(
               eventName: recurring.groupName,
               eventDate,
               eventTime: recurring.startTime,
-              status: "CONFIRMED",
-              chargeModel: "INTERNAL",
+              status: needsStaff ? "CONFIRMED" : "READY",
+              chargeModel: recurring.chargeModel,
+              ticketPrice: recurring.ticketPrice ? Number(recurring.ticketPrice) : undefined,
               recurringBookingId: id,
-              techRequired: false,
-              barRequired: false,
-              fohRequired: false,
+              techRequired: recurring.techRequired,
+              barRequired: recurring.barRequired,
+              fohRequired: recurring.fohRequired,
+              stairClimberRequired: recurring.stairClimberRequired,
             });
           }
         }

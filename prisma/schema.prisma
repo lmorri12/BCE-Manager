@@ -21,6 +21,7 @@ enum StaffType {
   BAR_VOLUNTEER
   FOH_VOLUNTEER
   DUTY_MANAGER
+  STAIR_CLIMBER_OPERATOR
 }
 
 enum BookingStatus {
@@ -43,6 +44,7 @@ enum TaskArea {
   TECH
   BAR
   FOH
+  STAIR_CLIMBER
 }
 
 enum DayOfWeek {
@@ -69,6 +71,7 @@ model User {
   updatedAt          DateTime       @updatedAt
   notifications      Notification[]
   bookingsCreated    Booking[]      @relation("BookingsCreated")
+  bookingNotes       BookingNote[]
   auditLogs          AuditLog[]
 }
 
@@ -95,22 +98,25 @@ model Booking {
   provisionalDates String? // free text for flexibility
 
   // Confirmation-stage fields (nullable until confirmed)
-  eventName        String?
-  eventDate        DateTime?
-  eventTime        String? // e.g. "19:30"
-  doorsOpenTime    String? // e.g. "19:00"
-  hasInterval      Boolean?
-  techRequirements String?   @db.Text
-  ticketPrice      Decimal?  @db.Decimal(10, 2)
-  ticketSetupInfo  String?   @db.Text
-  techContactName  String?
-  techContactPhone String?
-  techContactEmail String?
+  eventName          String?
+  eventDate          DateTime?
+  eventTime          String? // e.g. "19:30"
+  doorsOpenTime      String? // e.g. "19:00"
+  buildingAccessTime String? // e.g. "16:00" — time venue opens for booker/crew
+  hasInterval        Boolean?
+  techRequirements   String?   @db.Text
+  ticketPrice        Decimal?  @db.Decimal(10, 2)
+  ticketSetupInfo    String?   @db.Text
+  techContactName    String?
+  techContactPhone   String?
+  techContactEmail   String?
+  feedbackFormUrl    String?   // external feedback/survey link
 
   // Staff requirements
-  techRequired Boolean @default(true)
-  barRequired  Boolean @default(true)
-  fohRequired  Boolean @default(true)
+  techRequired         Boolean @default(true)
+  barRequired          Boolean @default(true)
+  fohRequired          Boolean @default(true)
+  stairClimberRequired Boolean @default(false)
 
   // Checklists
   marketingAssets Boolean @default(false)
@@ -126,6 +132,19 @@ model Booking {
   feedbackNotes     String?   @db.Text
   closedAt          DateTime?
 
+  // Room layout
+  roomLayout        String?   // e.g. "RAKED_100", "CABARET_LARGE", "OTHER"
+  roomLayoutOther   String?   // free text when roomLayout = "OTHER"
+  setupTime         String?   // e.g. "14:00" — time setup begins
+  setupNotes        String?   // seat-in/seat-out notes
+
+  // Application form tracking (pencil bookings)
+  applicationFormSent   Boolean   @default(false)
+  applicationFormSentAt DateTime?
+
+  // Override displacement tracking
+  displacedPartyNotified Boolean @default(false)
+
   // Recurring booking link
   recurringBookingId   String?
   recurringBooking     RecurringBooking? @relation("RecurringOccurrences", fields: [recurringBookingId], references: [id])
@@ -138,6 +157,8 @@ model Booking {
   hireLineItems    HireLineItem[]
   tasks            BookingTask[]
   staffAssignments EventStaff[]
+  notes            BookingNote[]
+  attachments      BookingAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -203,18 +224,24 @@ model EventStaff {
 // ─── Recurring Bookings (community groups) ───────────────────────────────────
 
 model RecurringBooking {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   groupName       String
   contactName     String
   contactEmail    String?
   contactPhone    String?
   daysOfWeek      DayOfWeek[]
-  startTime       String    // e.g. "18:00"
-  endTime         String    // e.g. "21:00"
+  startTime       String      // e.g. "18:00"
+  endTime         String      // e.g. "21:00"
   recurrenceStart DateTime
   recurrenceEnd   DateTime?
-  notes           String?   @db.Text
-  active          Boolean   @default(true)
+  chargeModel          ChargeModel @default(INTERNAL)
+  ticketPrice          Decimal?    @db.Decimal(10, 2)
+  techRequired         Boolean     @default(false)
+  barRequired          Boolean     @default(false)
+  fohRequired          Boolean     @default(false)
+  stairClimberRequired Boolean     @default(false)
+  notes           String?     @db.Text
+  active          Boolean     @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -234,6 +261,39 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId, read])
+}
+
+// ─── Booking Notes (comment thread on bookings) ─────────────────────────────
+
+model BookingNote {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// ─── Booking Attachments (local file storage) ───────────────────────────────
+
+model BookingAttachment {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fileName    String   // original filename
+  storedPath  String   // path on server disk
+  fileSize    Int      // bytes
+  mimeType    String?
+  fileType    String   // MARKETING_MATERIALS, THEATRE_RENTAL_FORM, CONTRACT, TECH_SPEC, OTHER
+  fileTypeOther String? // free text when fileType = "OTHER"
+  uploadedBy  String?  // user name who uploaded
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
 }
 
 // ─── Audit Log ───────────────────────────────────────────────────────────────

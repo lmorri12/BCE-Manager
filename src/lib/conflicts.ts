@@ -9,18 +9,13 @@ export type Conflict = {
   bookerName: string;
   status: string;
   chargeModel: string;
+  recurringBookingId: string | null;
 };
 
-/**
- * Find bookings that conflict with a given date.
- * A conflict = another non-closed booking on the same date.
- * Optionally exclude a specific booking ID (for checking against itself).
- */
 export async function findConflicts(
   date: Date,
   excludeBookingId?: string
 ): Promise<Conflict[]> {
-  // Normalise to start/end of day
   const dayStart = new Date(date);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(date);
@@ -35,7 +30,7 @@ export async function findConflicts(
     where.id = { not: excludeBookingId };
   }
 
-  const bookings = await prisma.booking.findMany({
+  return prisma.booking.findMany({
     where,
     select: {
       id: true,
@@ -46,16 +41,12 @@ export async function findConflicts(
       bookerName: true,
       status: true,
       chargeModel: true,
+      recurringBookingId: true,
     },
     orderBy: { eventTime: "asc" },
   });
-
-  return bookings;
 }
 
-/**
- * Find all dates that have more than one booking (conflict summary).
- */
 export async function findAllConflicts(): Promise<
   { date: string; count: number; bookings: Conflict[] }[]
 > {
@@ -73,11 +64,11 @@ export async function findAllConflicts(): Promise<
       bookerName: true,
       status: true,
       chargeModel: true,
+      recurringBookingId: true,
     },
     orderBy: { eventDate: "asc" },
   });
 
-  // Group by date
   const byDate: Record<string, Conflict[]> = {};
   for (const b of bookings) {
     if (!b.eventDate) continue;
@@ -87,8 +78,24 @@ export async function findAllConflicts(): Promise<
     byDate[key].push(b);
   }
 
-  // Return only dates with > 1 booking
   return Object.entries(byDate)
     .filter(([, arr]) => arr.length > 1)
     .map(([date, bookings]) => ({ date, count: bookings.length, bookings }));
+}
+
+/**
+ * Cancel a recurring booking occurrence by closing it and linking the override.
+ */
+export async function overrideRecurringBooking(
+  recurringBookingId: string,
+  overridingBookingId: string
+) {
+  await prisma.booking.update({
+    where: { id: recurringBookingId },
+    data: {
+      status: "CLOSED",
+      overriddenByBookingId: overridingBookingId,
+      closedAt: new Date(),
+    },
+  });
 }

@@ -76,7 +76,7 @@ export default function NewUserPage() {
                 id="role"
                 name="role"
                 required
-                className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
               >
                 {ROLES.map((r) => (
                   <option key={r.value} value={r.value}>

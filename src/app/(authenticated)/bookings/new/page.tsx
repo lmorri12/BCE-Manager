@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ type PencilDateEntry = { date: string; notes: string };
 
 export default function NewBookingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefillDate = searchParams.get("date") || "";
   const [bookingType, setBookingType] = useState<BookingType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,7 @@ export default function NewBookingPage() {
         eventDate: fd.get("eventDate"),
         eventTime: fd.get("eventTime"),
         doorsOpenTime: fd.get("doorsOpenTime"),
+        buildingAccessTime: fd.get("buildingAccessTime"),
         hasInterval: fd.get("hasInterval") === "on",
         techRequirements: fd.get("techRequirements"),
         ticketPrice: fd.get("ticketPrice"),
@@ -101,11 +104,17 @@ export default function NewBookingPage() {
         techContactName: fd.get("techContactName"),
         techContactPhone: fd.get("techContactPhone"),
         techContactEmail: fd.get("techContactEmail"),
+        feedbackFormUrl: fd.get("feedbackFormUrl"),
+        roomLayout: fd.get("roomLayout") || null,
+        roomLayoutOther: fd.get("roomLayoutOther") || null,
+        setupTime: fd.get("setupTime") || null,
+        setupNotes: fd.get("setupNotes") || null,
         chargeModel: isInternal ? "INTERNAL" : fd.get("chargeModel"),
         boxOfficeSplitPct: fd.get("boxOfficeSplitPct"),
         techRequired: fd.get("techRequired") === "on",
         barRequired: fd.get("barRequired") === "on",
         fohRequired: fd.get("fohRequired") === "on",
+        stairClimberRequired: fd.get("stairClimberRequired") === "on",
         marketingAssets: fd.get("marketingAssets") === "on",
         riskAssessment: fd.get("riskAssessment") === "on",
         insuranceProof: fd.get("insuranceProof") === "on",
@@ -357,7 +366,7 @@ export default function NewBookingPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Event Date *</Label>
-                      <Input name="eventDate" type="date" required />
+                      <Input name="eventDate" type="date" required defaultValue={prefillDate} />
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
@@ -369,10 +378,14 @@ export default function NewBookingPage() {
                       <Label>Doors Open</Label>
                       <Input name="doorsOpenTime" type="time" />
                     </div>
-                    <div className="flex items-end gap-2 pb-1">
-                      <input type="checkbox" id="hasInterval" name="hasInterval" className="h-4 w-4" />
-                      <Label htmlFor="hasInterval">Interval</Label>
+                    <div className="space-y-2">
+                      <Label>Building Access</Label>
+                      <Input name="buildingAccessTime" type="time" />
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="hasInterval" name="hasInterval" className="h-4 w-4" />
+                    <Label htmlFor="hasInterval">Has Interval</Label>
                   </div>
                 </fieldset>
 
@@ -387,7 +400,7 @@ export default function NewBookingPage() {
                       name="techRequirements"
                       rows={2}
                       placeholder="Sound, lighting, projector, etc."
-                      className="flex w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                      className="flex w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
@@ -406,15 +419,51 @@ export default function NewBookingPage() {
                   </div>
                 </fieldset>
 
+                {/* Room Layout */}
+                <fieldset className="space-y-4">
+                  <legend className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
+                    Room Layout
+                  </legend>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Layout</Label>
+                      <select name="roomLayout" className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm">
+                        <option value="">Not set</option>
+                        <option value="RAKED_100">Raked Seating 100</option>
+                        <option value="RAKED_114">Raked Seating 114</option>
+                        <option value="CABARET_LARGE">Cabaret - Large Round Tables</option>
+                        <option value="CABARET_SMALL">Cabaret - Small Round Tables</option>
+                        <option value="CABARET_TRESSLE">Cabaret - Tressle Tables</option>
+                        <option value="MARKET">Market Style</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Setup Time</Label>
+                      <Input name="setupTime" type="time" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Setup Notes</Label>
+                      <Input name="setupNotes" placeholder="e.g. Seats in by 14:00" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Other Layout (if Other selected)</Label>
+                      <Input name="roomLayoutOther" />
+                    </div>
+                  </div>
+                </fieldset>
+
                 {/* Staff Requirements */}
                 <fieldset className="space-y-4">
                   <legend className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
                     Staff Requirements
                   </legend>
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    Untick any areas not needed for this event (e.g. rehearsals, dance lessons).
+                    Untick any areas not needed for this event (e.g. rehearsals, dance lessons). Tick stair climber if an operator is required.
                   </p>
-                  <div className="flex gap-6">
+                  <div className="flex gap-6 flex-wrap">
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" name="techRequired" defaultChecked className="h-4 w-4" />
                       Tech required
@@ -427,6 +476,14 @@ export default function NewBookingPage() {
                       <input type="checkbox" name="fohRequired" defaultChecked className="h-4 w-4" />
                       FoH required
                     </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="stairClimberRequired" className="h-4 w-4" />
+                      Stair climber operator
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Feedback Form URL (optional)</Label>
+                    <Input name="feedbackFormUrl" type="url" placeholder="https://..." />
                   </div>
                 </fieldset>
 
@@ -443,7 +500,7 @@ export default function NewBookingPage() {
                           name="chargeModel"
                           value={chargeModel}
                           onChange={(e) => setChargeModel(e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-[var(--border)] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                          className="flex h-10 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
                         >
                           <option value="STRAIGHT_HIRE">Straight Hire</option>
                           <option value="BOX_OFFICE_SPLIT">Box Office Split</option>

@@ -35,6 +35,12 @@ export async function POST(request: Request) {
         endTime: data.endTime,
         recurrenceStart: new Date(data.recurrenceStart),
         recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
+        chargeModel: data.chargeModel || "INTERNAL",
+        ticketPrice: data.ticketPrice ? parseFloat(data.ticketPrice) : null,
+        techRequired: data.techRequired ?? false,
+        barRequired: data.barRequired ?? false,
+        fohRequired: data.fohRequired ?? false,
+        stairClimberRequired: data.stairClimberRequired ?? false,
         notes: data.notes || null,
       },
     });
