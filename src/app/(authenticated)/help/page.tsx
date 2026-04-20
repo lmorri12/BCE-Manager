@@ -143,7 +143,19 @@ export default function HelpPage() {
           <li>Tech Spec</li>
           <li>Other (free text description)</li>
         </ul>
+        <p><strong>Uploading and deleting</strong> attachments is restricted to Super Users and Bookings Admins. Tech Admins, Bar Admins and Trustees can view and download attachments but cannot add or remove them.</p>
         <p>Files are stored on the server for 2 years. Older files can be exported to SharePoint via the Data admin page.</p>
+      </Section>
+
+      <Section icon={Shield} title="Trustee View-Only Access">
+        <p>Trustees have read-only access for oversight purposes. They can:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>View the <strong>Dashboard</strong> (summary stats and upcoming events)</li>
+          <li>View the <strong>Bookings</strong> list and any booking detail</li>
+          <li>View the <strong>Rota</strong> to see staff assignments for upcoming events</li>
+          <li>Download attached files</li>
+        </ul>
+        <p>Trustees cannot create, edit, confirm, cancel, or close bookings; cannot assign staff; cannot upload or delete attachments; and cannot access Calendar, Recurring, Staff, Reports, or Admin areas.</p>
       </Section>
 
       <Section icon={BarChart3} title="Reports">
@@ -217,35 +229,38 @@ export default function HelpPage() {
                       <th className="p-3 font-medium text-center">Bookings Admin</th>
                       <th className="p-3 font-medium text-center">Tech Admin</th>
                       <th className="p-3 font-medium text-center">Bar Admin</th>
+                      <th className="p-3 font-medium text-center">Trustee</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
                     {[
-                      ["Create/edit/confirm bookings", true, true, false, false],
-                      ["Cancel bookings", true, true, false, false],
-                      ["View all bookings", true, true, true, true],
-                      ["Assign Technicians", true, false, true, false],
-                      ["Assign Bar Volunteers", true, false, false, true],
-                      ["Assign FoH / Duty Manager", true, true, false, false],
-                      ["Assign Stair Climber Operator", true, true, true, false],
-                      ["Assign Setup Volunteers", true, true, false, true],
-                      ["Send nudge notifications", true, true, false, false],
-                      ["Manage recurring bookings", true, true, false, false],
-                      ["View reports", true, true, false, false],
-                      ["View rota", true, true, true, true],
-                      ["View calendar", true, true, true, true],
-                      ["Upload/delete attachments", true, true, true, true],
-                      ["Manage users", true, false, false, false],
-                      ["View audit log", true, false, false, false],
-                      ["Data export/import", true, false, false, false],
-                      ["View this permissions table", true, false, false, false],
-                    ].map(([label, su, ba, ta, bra]) => (
+                      ["Create/edit/confirm bookings", true, true, false, false, false],
+                      ["Cancel bookings", true, true, false, false, false],
+                      ["View all bookings", true, true, true, true, true],
+                      ["Assign Technicians", true, false, true, false, false],
+                      ["Assign Bar Volunteers", true, false, false, true, false],
+                      ["Assign FoH / Duty Manager", true, true, false, false, false],
+                      ["Assign Stair Climber Operator", true, true, true, false, false],
+                      ["Assign Setup Volunteers", true, true, false, true, false],
+                      ["Send nudge notifications", true, true, false, false, false],
+                      ["Manage recurring bookings", true, true, false, false, false],
+                      ["View reports", true, true, false, false, false],
+                      ["View rota", true, true, true, true, true],
+                      ["View calendar", true, true, true, true, false],
+                      ["View attachments", true, true, true, true, true],
+                      ["Upload / delete attachments", true, true, false, false, false],
+                      ["Manage users", true, false, false, false, false],
+                      ["View audit log", true, false, false, false, false],
+                      ["Data export/import", true, false, false, false, false],
+                      ["View this permissions table", true, false, false, false, false],
+                    ].map(([label, su, ba, ta, bra, tr]) => (
                       <tr key={label as string}>
                         <td className="p-3">{label as string}</td>
                         <td className="p-3 text-center">{su ? "✓" : "—"}</td>
                         <td className="p-3 text-center">{ba ? "✓" : "—"}</td>
                         <td className="p-3 text-center">{ta ? "✓" : "—"}</td>
                         <td className="p-3 text-center">{bra ? "✓" : "—"}</td>
+                        <td className="p-3 text-center">{tr ? "✓" : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
