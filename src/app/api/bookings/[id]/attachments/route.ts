@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAuth, handleApiError } from "@/lib/authorize";
+import { requireAuth, requireRole, handleApiError } from "@/lib/authorize";
 import { auditLog } from "@/lib/audit";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
@@ -53,7 +53,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireRole("SUPER_USER", "BOOKINGS_ADMIN");
     const { id } = await params;
 
     // Verify the booking exists

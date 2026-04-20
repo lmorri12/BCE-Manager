@@ -6,6 +6,9 @@ const PUBLIC_ROUTES = ["/login", "/api/auth"];
 const ROLE_ROUTES: Record<string, string[]> = {
   "/admin": ["SUPER_USER"],
   "/recurring": ["SUPER_USER", "BOOKINGS_ADMIN"],
+  "/reports": ["SUPER_USER", "BOOKINGS_ADMIN"],
+  "/calendar": ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+  "/staff": ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
 };
 
 export default auth((req) => {

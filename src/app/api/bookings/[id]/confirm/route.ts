@@ -78,6 +78,7 @@ export async function POST(
         stairClimberRequired,
         roomLayout: data.roomLayout || null,
         roomLayoutOther: data.roomLayoutOther || null,
+        setupDate: data.setupDate ? new Date(data.setupDate) : null,
         setupTime: data.setupTime || null,
         setupNotes: data.setupNotes || null,
         marketingAssets: data.marketingAssets ?? false,
@@ -88,7 +89,7 @@ export async function POST(
     });
 
     // Spawn booking tasks only for required sub-areas
-    const tasks: { bookingId: string; area: "TECH" | "BAR" | "FOH" | "STAIR_CLIMBER"; description: string }[] = [];
+    const tasks: { bookingId: string; area: "TECH" | "BAR" | "FOH" | "STAIR_CLIMBER" | "SETUP"; description: string }[] = [];
 
     if (techRequired) {
       tasks.push({
@@ -119,6 +120,14 @@ export async function POST(
         bookingId: id,
         area: "STAIR_CLIMBER",
         description: "Assign stair climber operator",
+      });
+    }
+
+    if (data.roomLayout) {
+      tasks.push({
+        bookingId: id,
+        area: "SETUP",
+        description: "Assign setup volunteer(s)",
       });
     }
 

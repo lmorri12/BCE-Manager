@@ -11,6 +11,7 @@ const ROLES = [
   { value: "BOOKINGS_ADMIN", label: "Bookings Admin" },
   { value: "TECH_ADMIN", label: "Tech Admin" },
   { value: "BAR_ADMIN", label: "Bar Admin" },
+  { value: "TRUSTEE", label: "Trustee (view-only)" },
   { value: "SUPER_USER", label: "Super User" },
 ];
 

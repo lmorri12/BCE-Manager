@@ -50,12 +50,31 @@ export default function EditRecurringPage() {
   const [item, setItem] = useState<RecurringBooking | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  function fetchItem() {
     fetch(`/api/recurring/${params.id}`)
       .then((res) => res.json())
       .then(setItem);
+  }
+
+  useEffect(() => {
+    fetchItem();
   }, [params.id]);
+
+  async function handleCancelOccurrence(occId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const reason = prompt("Reason for cancelling this occurrence:");
+    if (!reason?.trim()) return;
+    setCancellingId(occId);
+    const res = await fetch(`/api/bookings/${occId}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    setCancellingId(null);
+    if (res.ok) fetchItem();
+  }
 
   if (!item) return <div className="p-6">Loading...</div>;
 
@@ -269,13 +288,24 @@ export default function EditRecurringPage() {
                         })
                       : "TBC"}
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     {occ.overriddenByBookingId && (
                       <Badge variant="destructive">Overridden</Badge>
                     )}
-                    <Badge variant={occ.status === "CONFIRMED" ? "success" : "secondary"}>
+                    <Badge variant={occ.status === "CANCELLED" ? "destructive" : occ.status === "CONFIRMED" ? "success" : occ.status === "READY" ? "success" : "secondary"}>
                       {occ.status.replace(/_/g, " ")}
                     </Badge>
+                    {!["CANCELLED", "CLOSED"].includes(occ.status) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-[var(--destructive)] hover:bg-[var(--destructive)]/10"
+                        onClick={(e) => handleCancelOccurrence(occ.id, e)}
+                        disabled={cancellingId === occ.id}
+                      >
+                        {cancellingId === occ.id ? "..." : "Cancel"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

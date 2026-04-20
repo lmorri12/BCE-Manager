@@ -36,6 +36,7 @@ const STATUS_LABELS: Record<string, string> = {
   READY: "Ready",
   POST_EVENT: "Post Event",
   CLOSED: "Closed",
+  CANCELLED: "Cancelled",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -44,6 +45,7 @@ const ROLE_LABELS: Record<string, string> = {
   FOH_VOLUNTEER: "FoH",
   DUTY_MANAGER: "DM",
   STAIR_CLIMBER_OPERATOR: "Stair",
+  SETUP_VOLUNTEER: "Setup",
 };
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

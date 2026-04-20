@@ -21,6 +21,7 @@ const ROLE_LABELS: Record<string, string> = {
   BOOKINGS_ADMIN: "Bookings Admin",
   TECH_ADMIN: "Tech Admin",
   BAR_ADMIN: "Bar Admin",
+  TRUSTEE: "Trustee",
 };
 
 export default function UsersPage() {

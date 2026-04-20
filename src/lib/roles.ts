@@ -12,13 +12,13 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     href: "/",
     icon: "LayoutDashboard",
-    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN", "TRUSTEE"],
   },
   {
     label: "Bookings",
     href: "/bookings",
     icon: "Calendar",
-    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN", "TRUSTEE"],
   },
   {
     label: "Calendar",
@@ -36,7 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Rota",
     href: "/rota",
     icon: "ClipboardList",
-    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN", "TRUSTEE"],
   },
   {
     label: "Staff",
@@ -72,7 +72,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Help",
     href: "/help",
     icon: "HelpCircle",
-    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN", "TRUSTEE"],
   },
 ];
 
@@ -86,6 +86,7 @@ export function getRoleLabel(role: Role): string {
     BOOKINGS_ADMIN: "Bookings Admin",
     TECH_ADMIN: "Tech Admin",
     BAR_ADMIN: "Bar Admin",
+    TRUSTEE: "Trustee",
   };
   return labels[role];
 }

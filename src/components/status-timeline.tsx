@@ -12,6 +12,15 @@ const STAGES = [
 ];
 
 export function StatusTimeline({ status }: { status: string }) {
+  if (status === "CANCELLED") {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-[var(--destructive)]/10 px-4 py-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--destructive)] text-white text-xs font-bold">X</div>
+        <span className="text-sm font-medium text-[var(--destructive)]">Cancelled</span>
+      </div>
+    );
+  }
+
   const currentIndex = STAGES.findIndex((s) => s.key === status);
 
   return (

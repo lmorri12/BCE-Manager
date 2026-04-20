@@ -14,6 +14,7 @@ enum Role {
   BOOKINGS_ADMIN
   TECH_ADMIN
   BAR_ADMIN
+  TRUSTEE
 }
 
 enum StaffType {
@@ -22,6 +23,7 @@ enum StaffType {
   FOH_VOLUNTEER
   DUTY_MANAGER
   STAIR_CLIMBER_OPERATOR
+  SETUP_VOLUNTEER
 }
 
 enum BookingStatus {
@@ -32,6 +34,7 @@ enum BookingStatus {
   DAY_OF
   POST_EVENT
   CLOSED
+  CANCELLED
 }
 
 enum ChargeModel {
@@ -45,6 +48,7 @@ enum TaskArea {
   BAR
   FOH
   STAIR_CLIMBER
+  SETUP
 }
 
 enum DayOfWeek {
@@ -132,11 +136,16 @@ model Booking {
   feedbackNotes     String?   @db.Text
   closedAt          DateTime?
 
-  // Room layout
-  roomLayout        String?   // e.g. "RAKED_100", "CABARET_LARGE", "OTHER"
-  roomLayoutOther   String?   // free text when roomLayout = "OTHER"
-  setupTime         String?   // e.g. "14:00" — time setup begins
-  setupNotes        String?   // seat-in/seat-out notes
+  // Cancellation
+  cancelledAt          DateTime?
+  cancellationReason   String?   @db.Text
+
+  // Room layout & setup
+  roomLayout        String?    // e.g. "RAKED_100", "CABARET_LARGE", "OTHER"
+  roomLayoutOther   String?    // free text when roomLayout = "OTHER"
+  setupDate         DateTime?  // setup can be day prior
+  setupTime         String?    // e.g. "14:00" — time setup begins
+  setupNotes        String?    // seat-in/seat-out notes
 
   // Application form tracking (pencil bookings)
   applicationFormSent   Boolean   @default(false)

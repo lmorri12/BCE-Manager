@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const STATUS_TABS = [
   { value: "READY", label: "Ready" },
   { value: "POST_EVENT", label: "Post Event" },
   { value: "CLOSED", label: "Closed" },
+  { value: "CANCELLED", label: "Cancelled" },
 ];
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "success" | "warning" | "destructive"> = {
@@ -43,6 +45,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "success" | "war
   DAY_OF: "warning",
   POST_EVENT: "secondary",
   CLOSED: "secondary",
+  CANCELLED: "destructive",
 };
 
 const CHARGE_LABELS: Record<string, string> = {
@@ -62,6 +65,8 @@ export default function BookingsPage() {
 function BookingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const canCreate = session?.user?.role !== "TRUSTEE";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [hideInternal, setHideInternal] = useState(false);
@@ -103,12 +108,14 @@ function BookingsContent() {
             />
             Hide internal
           </label>
-        <Link href="/bookings/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Booking
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link href="/bookings/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Booking
+            </Button>
+          </Link>
+        )}
         </div>
       </div>
 

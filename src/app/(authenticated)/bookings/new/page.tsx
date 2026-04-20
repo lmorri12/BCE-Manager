@@ -107,6 +107,7 @@ export default function NewBookingPage() {
         feedbackFormUrl: fd.get("feedbackFormUrl"),
         roomLayout: fd.get("roomLayout") || null,
         roomLayoutOther: fd.get("roomLayoutOther") || null,
+        setupDate: fd.get("setupDate") || null,
         setupTime: fd.get("setupTime") || null,
         setupNotes: fd.get("setupNotes") || null,
         chargeModel: isInternal ? "INTERNAL" : fd.get("chargeModel"),
@@ -439,19 +440,23 @@ export default function NewBookingPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Setup Time</Label>
-                      <Input name="setupTime" type="time" />
+                      <Label>Setup Date</Label>
+                      <Input name="setupDate" type="date" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Setup Notes</Label>
-                      <Input name="setupNotes" placeholder="e.g. Seats in by 14:00" />
+                      <Label>Setup Time</Label>
+                      <Input name="setupTime" type="time" />
                     </div>
                     <div className="space-y-2">
                       <Label>Other Layout (if Other selected)</Label>
                       <Input name="roomLayoutOther" />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Setup Notes</Label>
+                    <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
                   </div>
                 </fieldset>
 

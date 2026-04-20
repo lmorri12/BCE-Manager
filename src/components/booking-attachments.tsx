@@ -39,10 +39,12 @@ export function BookingAttachments({
   bookingId,
   attachments,
   onUpdate,
+  canEdit = true,
 }: {
   bookingId: string;
   attachments: Attachment[];
   onUpdate: () => void;
+  canEdit?: boolean;
 }) {
   const [uploading, setUploading] = useState(false);
   const [fileType, setFileType] = useState("MARKETING_MATERIALS");
@@ -115,14 +117,16 @@ export function BookingAttachments({
                   >
                     <Download className="h-4 w-4" />
                   </a>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleDelete(a.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleDelete(a.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -133,6 +137,7 @@ export function BookingAttachments({
           </p>
         )}
 
+        {canEdit && (
         <div className="border-t pt-4 space-y-3">
           <div className="flex items-end gap-3 flex-wrap">
             <div className="space-y-1">
@@ -175,6 +180,7 @@ export function BookingAttachments({
             </Button>
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );

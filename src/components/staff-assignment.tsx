@@ -27,16 +27,19 @@ const STAFF_TYPES = [
   { value: "FOH_VOLUNTEER", label: "FoH Volunteer" },
   { value: "DUTY_MANAGER", label: "Duty Manager" },
   { value: "STAIR_CLIMBER_OPERATOR", label: "Stair Climber Operator" },
+  { value: "SETUP_VOLUNTEER", label: "Setup Volunteer" },
 ];
 
 export function StaffAssignment({
   bookingId,
   assignments,
   onUpdate,
+  readOnly = false,
 }: {
   bookingId: string;
   assignments: Assignment[];
   onUpdate: () => void;
+  readOnly?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<StaffSuggestion[]>([]);
   const [selectedType, setSelectedType] = useState("");
@@ -121,13 +124,15 @@ export function StaffAssignment({
                     </span>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemove(a.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {!readOnly && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemove(a.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -138,6 +143,7 @@ export function StaffAssignment({
         )}
 
         {/* Assign New */}
+        {!readOnly && (
         <div className="border-t pt-4 space-y-3">
           <div className="flex items-end gap-3">
             <div className="space-y-1">
@@ -201,6 +207,7 @@ export function StaffAssignment({
             </Button>
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );

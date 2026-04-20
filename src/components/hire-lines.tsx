@@ -17,10 +17,12 @@ export function HireLines({
   bookingId,
   lines,
   onUpdate,
+  readOnly = false,
 }: {
   bookingId: string;
   lines: HireLine[];
   onUpdate: () => void;
+  readOnly?: boolean;
 }) {
   const [newDesc, setNewDesc] = useState("");
   const [newAmount, setNewAmount] = useState("");
@@ -84,13 +86,15 @@ export function HireLines({
                     {Number(line.amount).toFixed(2)}
                   </td>
                   <td className="py-2 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(line.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-[var(--destructive)]" />
-                    </Button>
+                    {!readOnly && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(line.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-[var(--destructive)]" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -108,6 +112,7 @@ export function HireLines({
         )}
 
         {/* Add new line */}
+        {!readOnly && (
         <div className="flex items-end gap-3 border-t pt-4">
           <div className="flex-1 space-y-1">
             <label className="text-xs font-medium">Description</label>
@@ -133,6 +138,7 @@ export function HireLines({
             Add
           </Button>
         </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAuth, handleApiError } from "@/lib/authorize";
+import { requireAuth, requireRole, handleApiError } from "@/lib/authorize";
 import { auditLog } from "@/lib/audit";
 import { readFile, unlink } from "fs/promises";
 import path from "path";
@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // DELETE /api/bookings/[id]/attachments/[attachmentId] — remove attachment
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await requireAuth();
+    const session = await requireRole("SUPER_USER", "BOOKINGS_ADMIN");
     const { id, attachmentId } = await params;
 
     const attachment = await prisma.bookingAttachment.findFirst({

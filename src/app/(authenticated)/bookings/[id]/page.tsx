@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ type Booking = {
   insuranceProof: boolean;
   roomLayout: string | null;
   roomLayoutOther: string | null;
+  setupDate: string | null;
   setupTime: string | null;
   setupNotes: string | null;
   applicationFormSent: boolean;
@@ -75,6 +77,8 @@ type Booking = {
   displacedPartyNotified: boolean;
   ticketsReconciled: boolean;
   feedbackNotes: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
   provisionalDates: string | null;
   enquiryDate: string;
   overriddenByBookingId: string | null;
@@ -96,6 +100,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "success" | "war
   DAY_OF: "warning",
   POST_EVENT: "secondary",
   CLOSED: "secondary",
+  CANCELLED: "destructive",
 };
 
 const ROOM_LAYOUTS = [
@@ -117,6 +122,10 @@ function getRoomLayoutLabel(val: string | null): string {
 export default function BookingDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const canManageAttachments = role === "SUPER_USER" || role === "BOOKINGS_ADMIN";
+  const isReadOnly = role === "TRUSTEE";
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -124,6 +133,8 @@ export default function BookingDetailPage() {
   const [showConfirmForm, setShowConfirmForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [conflictInfo, setConflictInfo] = useState<{ conflicts: any[]; savedData: Record<string, unknown> | null }>({ conflicts: [], savedData: null });
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   const fetchBooking = useCallback(async () => {
     const res = await fetch(`/api/bookings/${params.id}`);
@@ -188,6 +199,7 @@ export default function BookingDetailPage() {
       feedbackFormUrl: fd.get("feedbackFormUrl"),
       roomLayout: fd.get("roomLayout") || null,
       roomLayoutOther: fd.get("roomLayoutOther") || null,
+      setupDate: fd.get("setupDate") || null,
       setupTime: fd.get("setupTime") || null,
       setupNotes: fd.get("setupNotes") || null,
       chargeModel: fd.get("chargeModel"),
@@ -301,6 +313,7 @@ export default function BookingDetailPage() {
         feedbackFormUrl: fd.get("feedbackFormUrl"),
         roomLayout: fd.get("roomLayout") || null,
         roomLayoutOther: fd.get("roomLayoutOther") || null,
+        setupDate: fd.get("setupDate") ? new Date(fd.get("setupDate") as string).toISOString() : null,
         setupTime: fd.get("setupTime") || null,
         setupNotes: fd.get("setupNotes") || null,
         chargeModel: fd.get("chargeModel"),
@@ -371,6 +384,25 @@ export default function BookingDetailPage() {
     if (res.ok) setBooking(await res.json());
   }
 
+  async function handleCancel() {
+    if (!cancelReason.trim()) return;
+    setSaving(true);
+    const res = await fetch(`/api/bookings/${params.id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: cancelReason }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setBooking(await res.json());
+      setShowCancelDialog(false);
+      setCancelReason("");
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to cancel");
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
@@ -431,17 +463,76 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Nudge button for admins */}
-      {!isEnquiry && !["CLOSED"].includes(booking.status) && (
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={handleNudge}>
-            <Bell className="mr-1 h-4 w-4" /> Send Nudge
+      {/* Action buttons */}
+      {!isReadOnly && !["CLOSED", "CANCELLED"].includes(booking.status) && (
+        <div className="flex gap-3 flex-wrap">
+          {!isEnquiry && (
+            <Button variant="outline" size="sm" onClick={handleNudge}>
+              <Bell className="mr-1 h-4 w-4" /> Send Nudge
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="text-[var(--destructive)] border-[var(--destructive)]/30 hover:bg-[var(--destructive)]/10" onClick={() => setShowCancelDialog(true)}>
+            Cancel Booking
           </Button>
         </div>
       )}
 
+      {/* Cancel dialog */}
+      {showCancelDialog && (
+        <Card className="border-[var(--destructive)]/30">
+          <CardHeader>
+            <CardTitle className="text-[var(--destructive)]">Cancel Booking</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              This will mark the booking as cancelled. Please provide a reason — this will be visible in the audit log and on the booking record.
+            </p>
+            <div className="space-y-2">
+              <Label>Reason for cancellation *</Label>
+              <textarea
+                rows={3}
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g. Client requested cancellation, venue unavailable, etc."
+                className="flex w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="destructive" onClick={handleCancel} disabled={saving || !cancelReason.trim()}>
+                {saving ? "Cancelling..." : "Confirm Cancellation"}
+              </Button>
+              <Button variant="outline" onClick={() => { setShowCancelDialog(false); setCancelReason(""); }}>
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cancellation info banner */}
+      {booking.status === "CANCELLED" && (
+        <Card className="border-[var(--destructive)]/30 bg-[var(--destructive)]/5">
+          <CardContent className="pt-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-[var(--destructive)] shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-[var(--destructive)]">This booking has been cancelled</p>
+                {booking.cancellationReason && (
+                  <p className="text-sm mt-1"><span className="font-medium">Reason:</span> {booking.cancellationReason}</p>
+                )}
+                {booking.cancelledAt && (
+                  <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                    Cancelled on {new Date(booking.cancelledAt).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Enquiry Details (editable when ENQUIRY) */}
-      {isEnquiry && (
+      {isEnquiry && !isReadOnly && (
         <Card>
           <CardHeader>
             <CardTitle>Enquiry Details</CardTitle>
@@ -490,8 +581,43 @@ export default function BookingDetailPage() {
         </Card>
       )}
 
+      {/* Enquiry Details — read-only for trustees */}
+      {isEnquiry && isReadOnly && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Enquiry Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              <div>
+                <span className="font-medium text-[var(--muted-foreground)]">Booker</span>
+                <p>{booking.bookerName}</p>
+              </div>
+              <div>
+                <span className="font-medium text-[var(--muted-foreground)]">Event Name</span>
+                <p>{booking.eventNameTBC || "TBC"}</p>
+              </div>
+              <div>
+                <span className="font-medium text-[var(--muted-foreground)]">Email</span>
+                <p>{booking.bookerEmail || "—"}</p>
+              </div>
+              <div>
+                <span className="font-medium text-[var(--muted-foreground)]">Phone</span>
+                <p>{booking.bookerPhone || "—"}</p>
+              </div>
+              {booking.provisionalDates && (
+                <div className="col-span-2">
+                  <span className="font-medium text-[var(--muted-foreground)]">Provisional Dates</span>
+                  <p>{booking.provisionalDates}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Pencil Dates — shown for enquiries */}
-      {isEnquiry && (
+      {isEnquiry && !isReadOnly && (
         <PencilDates
           bookingId={booking.id}
           dates={booking.pencilDates || []}
@@ -500,7 +626,7 @@ export default function BookingDetailPage() {
       )}
 
       {/* Application Form Tracker — enquiries */}
-      {isEnquiry && (
+      {isEnquiry && !isReadOnly && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -526,7 +652,7 @@ export default function BookingDetailPage() {
       )}
 
       {/* Confirmation Form */}
-      {(showConfirmForm || (isEnquiry && showConfirmForm)) && (
+      {!isReadOnly && (showConfirmForm || (isEnquiry && showConfirmForm)) && (
         <Card>
           <CardHeader>
             <CardTitle>Confirm Booking — Full Details</CardTitle>
@@ -610,17 +736,23 @@ export default function BookingDetailPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Setup Date</Label>
+                  <Input name="setupDate" type="date" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Setup Time</Label>
                   <Input name="setupTime" type="time" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Other Layout (if Other selected)</Label>
+                  <Input name="roomLayoutOther" placeholder="Describe custom layout" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Setup Notes (seat-in/seat-out, etc.)</Label>
                 <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
-              </div>
-              <div className="space-y-2">
-                <Label>Other Layout (if Other selected)</Label>
-                <Input name="roomLayoutOther" placeholder="Describe custom layout" />
               </div>
 
               {/* Charge Model */}
@@ -755,9 +887,11 @@ export default function BookingDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Event Details</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
-              <Pencil className="mr-1 h-3 w-3" /> Edit
-            </Button>
+            {!isReadOnly && (
+              <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                <Pencil className="mr-1 h-3 w-3" /> Edit
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
@@ -822,10 +956,15 @@ export default function BookingDetailPage() {
                   <p>{booking.roomLayout === "OTHER" ? booking.roomLayoutOther || "Other" : getRoomLayoutLabel(booking.roomLayout)}</p>
                 </div>
               )}
-              {booking.setupTime && (
+              {(booking.setupDate || booking.setupTime) && (
                 <div>
-                  <span className="font-medium text-[var(--muted-foreground)]">Setup Time</span>
-                  <p>{booking.setupTime} {booking.setupNotes && `— ${booking.setupNotes}`}</p>
+                  <span className="font-medium text-[var(--muted-foreground)]">Setup</span>
+                  <p>
+                    {booking.setupDate && new Date(booking.setupDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+                    {booking.setupDate && booking.setupTime && " at "}
+                    {booking.setupTime}
+                    {booking.setupNotes && ` — ${booking.setupNotes}`}
+                  </p>
                 </div>
               )}
               <div className="col-span-2 flex gap-3 flex-wrap">
@@ -846,7 +985,7 @@ export default function BookingDetailPage() {
       )}
 
       {/* Edit Mode */}
-      {!isEnquiry && editMode && (
+      {!isEnquiry && editMode && !isReadOnly && (
         <Card>
           <CardHeader>
             <CardTitle>Edit Event Details</CardTitle>
@@ -898,6 +1037,12 @@ export default function BookingDetailPage() {
                     ))}
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Setup Date</Label>
+                  <Input name="setupDate" type="date" defaultValue={booking.setupDate ? new Date(booking.setupDate).toISOString().split("T")[0] : ""} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Setup Time</Label>
                   <Input name="setupTime" type="time" defaultValue={booking.setupTime || ""} />
@@ -988,16 +1133,17 @@ export default function BookingDetailPage() {
           bookingId={booking.id}
           assignments={booking.staffAssignments || []}
           onUpdate={fetchBooking}
+          readOnly={isReadOnly}
         />
       )}
 
       {/* Hire Lines (for Straight Hire bookings) */}
       {booking.chargeModel === "STRAIGHT_HIRE" && !isEnquiry && (
-        <HireLines bookingId={booking.id} lines={booking.hireLineItems || []} onUpdate={fetchBooking} />
+        <HireLines bookingId={booking.id} lines={booking.hireLineItems || []} onUpdate={fetchBooking} readOnly={isReadOnly} />
       )}
 
       {/* Post-Event Actions */}
-      {["READY", "DAY_OF", "IN_PROGRESS"].includes(booking.status) && (
+      {!isReadOnly && ["READY", "DAY_OF", "IN_PROGRESS"].includes(booking.status) && (
         <div className="flex gap-3">
           <Button variant="outline" onClick={handleMoveToPostEvent}>
             Move to Post-Event
@@ -1005,7 +1151,7 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {booking.status === "POST_EVENT" && (
+      {booking.status === "POST_EVENT" && !isReadOnly && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Post-Event</CardTitle>
@@ -1049,10 +1195,11 @@ export default function BookingDetailPage() {
           bookingId={booking.id}
           attachments={booking.attachments || []}
           onUpdate={fetchBooking}
+          canEdit={canManageAttachments}
         />
       )}
 
-      <BookingNotes bookingId={booking.id} />
+      <BookingNotes bookingId={booking.id} readOnly={isReadOnly} />
 
       {/* Audit Log */}
       <BookingAuditLog bookingId={booking.id} />
