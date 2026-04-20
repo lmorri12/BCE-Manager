@@ -152,10 +152,11 @@ export default function HelpPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li>View the <strong>Dashboard</strong> (summary stats and upcoming events)</li>
           <li>View the <strong>Bookings</strong> list and any booking detail</li>
+          <li>View the <strong>Calendar</strong> (read-only, no "new booking" button)</li>
           <li>View the <strong>Rota</strong> to see staff assignments for upcoming events</li>
           <li>Download attached files</li>
         </ul>
-        <p>Trustees cannot create, edit, confirm, cancel, or close bookings; cannot assign staff; cannot upload or delete attachments; and cannot access Calendar, Recurring, Staff, Reports, or Admin areas.</p>
+        <p>Trustees cannot create, edit, confirm, cancel, or close bookings; cannot assign staff; cannot upload or delete attachments; and cannot access Recurring, Staff, Reports, or Admin areas.</p>
       </Section>
 
       <Section icon={BarChart3} title="Reports">
@@ -246,7 +247,7 @@ export default function HelpPage() {
                       ["Manage recurring bookings", true, true, false, false, false],
                       ["View reports", true, true, false, false, false],
                       ["View rota", true, true, true, true, true],
-                      ["View calendar", true, true, true, true, false],
+                      ["View calendar", true, true, true, true, true],
                       ["View attachments", true, true, true, true, true],
                       ["Upload / delete attachments", true, true, false, false, false],
                       ["Manage users", true, false, false, false, false],

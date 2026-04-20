@@ -24,7 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Calendar",
     href: "/calendar",
     icon: "CalendarDays",
-    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN"],
+    roles: ["SUPER_USER", "BOOKINGS_ADMIN", "TECH_ADMIN", "BAR_ADMIN", "TRUSTEE"],
   },
   {
     label: "Recurring",

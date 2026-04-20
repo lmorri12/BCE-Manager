@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, X, Clock, MapPin } from "lucide-react";
@@ -66,6 +67,8 @@ function dateKey(date: Date): string {
 
 export default function CalendarPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const canCreate = session?.user?.role !== "TRUSTEE";
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
@@ -284,14 +287,16 @@ export default function CalendarPage() {
             </div>
 
             {/* Add booking button */}
-            <div className="px-3 pt-3">
-              <button
-                onClick={() => router.push(`/bookings/new?date=${selectedDay}`)}
-                className="w-full rounded-md border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 hover:border-blue-400 hover:text-blue-600 transition-colors"
-              >
-                + New booking on this day
-              </button>
-            </div>
+            {canCreate && (
+              <div className="px-3 pt-3">
+                <button
+                  onClick={() => router.push(`/bookings/new?date=${selectedDay}`)}
+                  className="w-full rounded-md border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                >
+                  + New booking on this day
+                </button>
+              </div>
+            )}
 
             {/* Events list */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
