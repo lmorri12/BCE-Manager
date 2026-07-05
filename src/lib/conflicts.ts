@@ -10,6 +10,7 @@ export type Conflict = {
   status: string;
   chargeModel: string;
   recurringBookingId: string | null;
+  isSetup: boolean;
 };
 
 export async function findConflicts(
@@ -24,6 +25,7 @@ export async function findConflicts(
   const where: any = {
     OR: [
       { bookingDays: { some: { date: { gte: dayStart, lte: dayEnd } } } },
+      { setupDate: { gte: dayStart, lte: dayEnd } },
       { AND: [{ bookingDays: { none: {} } }, { eventDate: { gte: dayStart, lte: dayEnd } }] },
     ],
     status: { notIn: ["CLOSED", "POST_EVENT"] },
@@ -45,6 +47,8 @@ export async function findConflicts(
       status: true,
       chargeModel: true,
       recurringBookingId: true,
+      setupDate: true,
+      setupTime: true,
       bookingDays: {
         where: { date: { gte: dayStart, lte: dayEnd } },
         select: { startTime: true },
@@ -53,10 +57,61 @@ export async function findConflicts(
     },
     orderBy: { eventTime: "asc" },
   }).then((bookings) =>
-    bookings.map((booking) => ({
-      ...booking,
-      eventTime: booking.bookingDays[0]?.startTime ?? booking.eventTime,
-    }))
+    bookings.flatMap((booking) => {
+      const conflicts: Conflict[] = [];
+      const hasBookingDayOnDate = booking.bookingDays.length > 0;
+
+      if (hasBookingDayOnDate) {
+        conflicts.push({
+          id: booking.id,
+          eventName: booking.eventName,
+          eventNameTBC: booking.eventNameTBC,
+          eventDate: date,
+          eventTime: booking.bookingDays[0]?.startTime ?? booking.eventTime,
+          bookerName: booking.bookerName,
+          status: booking.status,
+          chargeModel: booking.chargeModel,
+          recurringBookingId: booking.recurringBookingId,
+          isSetup: false,
+        });
+      } else if (booking.eventDate) {
+        conflicts.push({
+          id: booking.id,
+          eventName: booking.eventName,
+          eventNameTBC: booking.eventNameTBC,
+          eventDate: booking.eventDate,
+          eventTime: booking.eventTime,
+          bookerName: booking.bookerName,
+          status: booking.status,
+          chargeModel: booking.chargeModel,
+          recurringBookingId: booking.recurringBookingId,
+          isSetup: false,
+        });
+      }
+
+      const setupIsSameDayAsEvent =
+        hasBookingDayOnDate ||
+        (booking.eventDate &&
+          booking.eventDate >= dayStart &&
+          booking.eventDate <= dayEnd);
+
+      if (booking.setupDate && !setupIsSameDayAsEvent) {
+        conflicts.push({
+          id: booking.id,
+          eventName: booking.eventName,
+          eventNameTBC: booking.eventNameTBC,
+          eventDate: booking.setupDate,
+          eventTime: booking.setupTime,
+          bookerName: booking.bookerName,
+          status: booking.status,
+          chargeModel: booking.chargeModel,
+          recurringBookingId: booking.recurringBookingId,
+          isSetup: true,
+        });
+      }
+
+      return conflicts;
+    })
   );
 }
 
@@ -67,6 +122,7 @@ export async function findAllConflicts(): Promise<
     where: {
       OR: [
         { bookingDays: { some: {} } },
+        { setupDate: { not: null } },
         { AND: [{ bookingDays: { none: {} } }, { eventDate: { not: null } }] },
       ],
       status: { notIn: ["CLOSED", "POST_EVENT"] },
@@ -81,6 +137,8 @@ export async function findAllConflicts(): Promise<
       status: true,
       chargeModel: true,
       recurringBookingId: true,
+      setupDate: true,
+      setupTime: true,
       bookingDays: {
         select: {
           date: true,
@@ -99,12 +157,19 @@ export async function findAllConflicts(): Promise<
         ? b.bookingDays.map((day) => ({
             eventDate: day.date,
             eventTime: day.startTime ?? b.eventTime,
+            isSetup: false,
           }))
         : b.eventDate
-          ? [{ eventDate: b.eventDate, eventTime: b.eventTime }]
+          ? [{ eventDate: b.eventDate, eventTime: b.eventTime, isSetup: false }]
           : [];
 
-    for (const day of dayEntries) {
+    const setupEntry =
+      b.setupDate &&
+      !dayEntries.some((entry) => entry.eventDate.getTime() === b.setupDate!.getTime())
+        ? [{ eventDate: b.setupDate, eventTime: b.setupTime, isSetup: true }]
+        : [];
+
+    for (const day of [...dayEntries, ...setupEntry]) {
       const d = new Date(day.eventDate);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       if (!byDate[key]) byDate[key] = [];
@@ -118,6 +183,7 @@ export async function findAllConflicts(): Promise<
         status: b.status,
         chargeModel: b.chargeModel,
         recurringBookingId: b.recurringBookingId,
+        isSetup: day.isSetup,
       });
     }
   }

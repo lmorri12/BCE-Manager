@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth, requireRole, handleApiError } from "@/lib/authorize";
 import { auditLog } from "@/lib/audit";
+import { isAllowedAttachmentFile } from "@/lib/attachment-files";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -77,6 +78,13 @@ export async function POST(
     if (!file) {
       return NextResponse.json(
         { error: "No file provided" },
+        { status: 400 }
+      );
+    }
+
+    if (!isAllowedAttachmentFile(file.name, file.type)) {
+      return NextResponse.json(
+        { error: "Only Word documents, PDFs, and image files can be uploaded" },
         { status: 400 }
       );
     }

@@ -20,6 +20,7 @@ type CalendarBooking = {
   recurringBookingId: string | null;
   isPencilDate: boolean;
   pencilNotes: string | null;
+  isSetupDay?: boolean;
 };
 
 const MONTH_NAMES = [
@@ -30,6 +31,15 @@ const MONTH_NAMES = [
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getEventStyle(booking: CalendarBooking) {
+  if (booking.isSetupDay) {
+    return {
+      bg: "bg-[#E9D5FF]/40",
+      border: "border-l-[#9333EA]",
+      dot: "bg-[#9333EA]",
+      text: "text-[#6B21A8]",
+      label: "Setup",
+    };
+  }
   if (booking.isPencilDate || booking.status === "ENQUIRY") {
     return {
       bg: "bg-[#FCD7AB]/30",
@@ -58,7 +68,20 @@ function getEventStyle(booking: CalendarBooking) {
 }
 
 function getLabel(booking: CalendarBooking): string {
-  return booking.eventName || booking.eventNameTBC || "Unnamed";
+  const name = booking.eventName || booking.eventNameTBC || "Unnamed";
+  return booking.isSetupDay ? `${name} (Setup)` : name;
+}
+
+function getTimeLabel(booking: CalendarBooking): string | null {
+  if (!booking.eventTime) return null;
+  if (booking.isSetupDay) {
+    return booking.doorsOpenTime
+      ? `${booking.eventTime} to ${booking.doorsOpenTime}`
+      : booking.eventTime;
+  }
+  return booking.doorsOpenTime
+    ? `${booking.eventTime} (Doors ${booking.doorsOpenTime})`
+    : booking.eventTime;
 }
 
 function dateKey(date: Date): string {
@@ -174,6 +197,9 @@ export default function CalendarPage() {
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[var(--bce-green)]" /> Internal
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#9333EA]" /> Setup
           </span>
         </div>
       </div>
@@ -327,13 +353,10 @@ export default function CalendarPage() {
                         </span>
                       </div>
 
-                      {b.eventTime && (
+                      {getTimeLabel(b) && (
                         <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
                           <Clock className="h-3 w-3" />
-                          <span>
-                            {b.eventTime}
-                            {b.doorsOpenTime && ` (Doors ${b.doorsOpenTime})`}
-                          </span>
+                          <span>{getTimeLabel(b)}</span>
                         </div>
                       )}
 

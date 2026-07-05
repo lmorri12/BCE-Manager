@@ -31,6 +31,7 @@ type Conflict = {
     eventNameTBC: string | null;
     eventTime: string | null;
     bookerName: string;
+    isSetup?: boolean;
   }[];
 };
 
@@ -177,7 +178,10 @@ export default function DashboardPage() {
                       href={`/bookings/${b.id}`}
                       className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs hover:bg-amber-100 transition-colors"
                     >
-                      <span className="font-medium">{b.eventName || b.eventNameTBC || "Unnamed"}</span>
+                      <span className="font-medium">
+                        {b.eventName || b.eventNameTBC || "Unnamed"}
+                        {b.isSetup ? " (Setup)" : ""}
+                      </span>
                       {b.eventTime && <span className="text-amber-600">{b.eventTime}</span>}
                       <span className="text-amber-500">({b.bookerName})</span>
                     </Link>

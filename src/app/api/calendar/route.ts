@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       where: {
         OR: [
           { bookingDays: { some: { date: { gte: startDate, lte: endDate } } } },
+          { setupDate: { gte: startDate, lte: endDate } },
           { AND: [{ eventDate: { gte: startDate, lte: endDate } }, { bookingDays: { none: {} } }] },
         ],
         status: { not: "CLOSED" },
@@ -45,6 +46,9 @@ export async function GET(request: Request) {
         bookerName: true,
         chargeModel: true,
         recurringBookingId: true,
+        setupDate: true,
+        setupTime: true,
+        setupEndTime: true,
         bookingDays: {
           where: { date: { gte: startDate, lte: endDate } },
           orderBy: [{ date: "asc" }, { sortOrder: "asc" }],
@@ -93,12 +97,13 @@ export async function GET(request: Request) {
       recurringBookingId: null,
       isPencilDate: true,
       pencilNotes: pd.notes,
+      isSetupDay: false,
     }));
 
     const allItems = [
       ...bookings.flatMap((booking) => {
-        if (booking.bookingDays.length > 0) {
-          return booking.bookingDays.map((day) => ({
+        const eventItems = booking.bookingDays.length > 0
+          ? booking.bookingDays.map((day) => ({
             id: booking.id,
             status: booking.status,
             eventName: booking.eventName,
@@ -111,23 +116,45 @@ export async function GET(request: Request) {
             recurringBookingId: booking.recurringBookingId,
             isPencilDate: false,
             pencilNotes: null,
-          }));
-        }
+            isSetupDay: false,
+          }))
+          : [{
+            id: booking.id,
+            status: booking.status,
+            eventName: booking.eventName,
+            eventNameTBC: booking.eventNameTBC,
+            eventDate: booking.eventDate?.toISOString() ?? null,
+            eventTime: booking.eventTime,
+            doorsOpenTime: booking.doorsOpenTime,
+            bookerName: booking.bookerName,
+            chargeModel: booking.chargeModel,
+            recurringBookingId: booking.recurringBookingId,
+            isPencilDate: false,
+            pencilNotes: null,
+            isSetupDay: false,
+          }];
 
-        return [{
-          id: booking.id,
-          status: booking.status,
-          eventName: booking.eventName,
-          eventNameTBC: booking.eventNameTBC,
-          eventDate: booking.eventDate?.toISOString() ?? null,
-          eventTime: booking.eventTime,
-          doorsOpenTime: booking.doorsOpenTime,
-          bookerName: booking.bookerName,
-          chargeModel: booking.chargeModel,
-          recurringBookingId: booking.recurringBookingId,
-          isPencilDate: false,
-          pencilNotes: null,
-        }];
+        const setupItems =
+          booking.setupDate &&
+          !eventItems.some((item) => item.eventDate?.slice(0, 10) === booking.setupDate?.toISOString().slice(0, 10))
+          ? [{
+              id: booking.id,
+              status: booking.status,
+              eventName: booking.eventName,
+              eventNameTBC: booking.eventNameTBC,
+              eventDate: booking.setupDate.toISOString(),
+              eventTime: booking.setupTime,
+              doorsOpenTime: booking.setupEndTime,
+              bookerName: booking.bookerName,
+              chargeModel: booking.chargeModel,
+              recurringBookingId: booking.recurringBookingId,
+              isPencilDate: false,
+              pencilNotes: null,
+              isSetupDay: true,
+            }]
+          : [];
+
+        return [...eventItems, ...setupItems];
       }),
       ...pencilBookings,
     ].sort((a, b) => {

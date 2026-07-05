@@ -564,7 +564,10 @@ export default function NewBookingPage() {
                 <div className="space-y-2">
                   {conflicts.map((c: any) => (
                     <div key={c.id} className="rounded border border-amber-200 bg-white p-2 text-sm">
-                      <span className="font-medium">{c.eventName || c.eventNameTBC || "Unnamed"}</span>
+                      <span className="font-medium">
+                        {c.eventName || c.eventNameTBC || "Unnamed"}
+                        {c.isSetup ? " (Setup)" : ""}
+                      </span>
                       {c.eventTime && <span className="text-amber-600"> at {c.eventTime}</span>}
                       <span className="text-amber-600"> — {c.bookerName}</span>
                     </div>

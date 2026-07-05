@@ -879,7 +879,10 @@ export default function BookingDetailPage() {
                     {conflictInfo.conflicts.map((c: any) => (
                       <div key={c.id} className="rounded border border-amber-200 bg-white p-2 text-sm flex items-center justify-between">
                         <div>
-                          <span className="font-medium">{c.eventName || c.eventNameTBC || "Unnamed"}</span>
+                          <span className="font-medium">
+                            {c.eventName || c.eventNameTBC || "Unnamed"}
+                            {c.isSetup ? " (Setup)" : ""}
+                          </span>
                           {c.eventTime && <span className="text-amber-600"> at {c.eventTime}</span>}
                           <span className="text-amber-600"> — {c.bookerName}</span>
                         </div>

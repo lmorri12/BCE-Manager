@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ATTACHMENT_FILE_ACCEPT, ATTACHMENT_FILE_TYPE_LABEL, isAllowedAttachmentFile } from "@/lib/attachment-files";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,34 +51,76 @@ export function BookingAttachments({
   const [fileType, setFileType] = useState("MARKETING_MATERIALS");
   const [fileTypeOther, setFileTypeOther] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   async function handleUpload() {
     if (!selectedFile) return;
     setUploading(true);
+    setUploadError(null);
+    setUploadMessage(null);
 
     const fd = new FormData();
     fd.append("file", selectedFile);
     fd.append("fileType", fileType);
     if (fileType === "OTHER") fd.append("fileTypeOther", fileTypeOther);
 
-    await fetch(`/api/bookings/${bookingId}/attachments`, {
-      method: "POST",
-      body: fd,
-    });
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/attachments`, {
+        method: "POST",
+        body: fd,
+      });
 
-    setUploading(false);
-    setSelectedFile(null);
-    setFileType("MARKETING_MATERIALS");
-    setFileTypeOther("");
-    onUpdate();
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "Upload failed");
+      }
+
+      setSelectedFile(null);
+      setFileType("MARKETING_MATERIALS");
+      setFileTypeOther("");
+      setUploadMessage(`Uploaded ${selectedFile.name}`);
+      onUpdate();
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this attachment?")) return;
-    await fetch(`/api/bookings/${bookingId}/attachments/${id}`, {
+    setUploadError(null);
+    setUploadMessage(null);
+    const response = await fetch(`/api/bookings/${bookingId}/attachments/${id}`, {
       method: "DELETE",
     });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      setUploadError(body?.error || "Delete failed");
+      return;
+    }
+
     onUpdate();
+  }
+
+  function handleFileChange(file: File | null) {
+    setUploadError(null);
+    setUploadMessage(null);
+
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    if (!isAllowedAttachmentFile(file.name, file.type)) {
+      setSelectedFile(null);
+      setUploadError("Only Word documents, PDFs, and image files can be uploaded");
+      return;
+    }
+
+    setSelectedFile(file);
   }
 
   return (
@@ -139,6 +182,16 @@ export function BookingAttachments({
 
         {canEdit && (
         <div className="border-t pt-4 space-y-3">
+          {uploadError && (
+            <div className="rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-700">
+              {uploadError}
+            </div>
+          )}
+          {uploadMessage && (
+            <div className="rounded-md border border-green-300 bg-green-50 p-2 text-sm text-green-700">
+              {uploadMessage}
+            </div>
+          )}
           <div className="flex items-end gap-3 flex-wrap">
             <div className="space-y-1">
               <label className="text-xs font-medium">Type</label>
@@ -168,8 +221,12 @@ export function BookingAttachments({
               <label className="text-xs font-medium">File</label>
               <Input
                 type="file"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                accept={ATTACHMENT_FILE_ACCEPT}
+                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
+              <p className="text-xs text-[var(--muted-foreground)]">
+                {ATTACHMENT_FILE_TYPE_LABEL}
+              </p>
             </div>
             <Button
               onClick={handleUpload}

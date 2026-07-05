@@ -144,6 +144,7 @@ export default function HelpPage() {
           <li>Tech Spec</li>
           <li>Other (free text description)</li>
         </ul>
+        <p>Only <strong>Word documents, PDFs, and image files</strong> can be uploaded.</p>
         <p><strong>Uploading and deleting</strong> attachments is restricted to Super Users and Bookings Admins. Tech Admins, Bar Admins and Trustees can view and download attachments but cannot add or remove them.</p>
         <p>Files are stored on the server for 2 years. Older files can be exported to SharePoint via the Data admin page.</p>
       </Section>

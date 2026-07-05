@@ -29,15 +29,24 @@ export async function POST(
         doorsOpenTime: String(data.doorsOpenTime ?? ""),
       });
     }
+    const setupDate = data.setupDate ? new Date(String(data.setupDate)) : null;
+    const datesToCheck = [
+      ...bookingDays.map((day) => day.date),
+      ...(setupDate &&
+      !bookingDays.some((day) => new Date(day.date).toDateString() === setupDate.toDateString())
+        ? [String(data.setupDate)]
+        : []),
+    ];
 
     // Check for conflicts unless explicitly overridden
-    if (bookingDays.length > 0 && !data.forceConfirm) {
+    if (datesToCheck.length > 0 && !data.forceConfirm) {
       const conflictsByBookingId = new Map<string, Awaited<ReturnType<typeof findConflicts>>[number]>();
 
-      for (const day of bookingDays) {
-        const conflicts = await findConflicts(new Date(day.date), id);
+      for (const dateToCheck of datesToCheck) {
+        const conflicts = await findConflicts(new Date(dateToCheck), id);
         for (const conflict of conflicts) {
-          conflictsByBookingId.set(conflict.id, conflict);
+          const key = `${conflict.id}:${conflict.isSetup ? "setup" : "event"}`;
+          conflictsByBookingId.set(key, conflict);
         }
       }
 
@@ -46,7 +55,7 @@ export async function POST(
         return NextResponse.json(
           {
             error: "conflict",
-            message: `There ${conflicts.length === 1 ? "is" : "are"} ${conflicts.length} conflicting booking${conflicts.length === 1 ? "" : "s"} across the selected event days.`,
+            message: `There ${conflicts.length === 1 ? "is" : "are"} ${conflicts.length} conflicting booking${conflicts.length === 1 ? "" : "s"} across the selected event or setup days.`,
             conflicts,
           },
           { status: 409 }
