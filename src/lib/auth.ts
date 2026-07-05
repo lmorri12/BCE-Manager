@@ -58,6 +58,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        await prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            userName: user.name,
+            action: "USER_LOGGED_IN",
+            entity: "User",
+            entityId: user.id,
+            summary: `${user.name} logged in`,
+          },
+        });
+
         return {
           id: user.id,
           email: user.email,

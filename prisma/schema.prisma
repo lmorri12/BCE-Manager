@@ -105,6 +105,7 @@ model Booking {
   eventName          String?
   eventDate          DateTime?
   eventTime          String? // e.g. "19:30"
+  eventEndTime       String? // e.g. "22:30"
   doorsOpenTime      String? // e.g. "19:00"
   buildingAccessTime String? // e.g. "16:00" — time venue opens for booker/crew
   hasInterval        Boolean?
@@ -146,6 +147,7 @@ model Booking {
   roomLayoutOther   String?    // free text when roomLayout = "OTHER"
   setupDate         DateTime?  // setup can be day prior
   setupTime         String?    // e.g. "14:00" — time setup begins
+  setupEndTime      String?    // e.g. "16:00" — time setup finishes
   setupNotes        String?    // seat-in/seat-out notes
 
   // Application form tracking (pencil bookings)
@@ -169,6 +171,7 @@ model Booking {
   staffAssignments EventStaff[]
   notes            BookingNote[]
   attachments      BookingAttachment[]
+  bookingDays      BookingEventDay[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,6 +179,21 @@ model Booking {
   @@index([status])
   @@index([eventDate])
   @@index([recurringBookingId])
+}
+
+model BookingEventDay {
+  id            String   @id @default(cuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  date          DateTime
+  startTime     String?
+  endTime       String?
+  doorsOpenTime String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([date])
 }
 
 // ─── Provisional Dates (pencil dates shown on calendar for enquiries) ────────

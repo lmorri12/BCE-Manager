@@ -13,10 +13,16 @@ import { StaffAssignment } from "@/components/staff-assignment";
 import { PencilDates } from "@/components/pencil-dates";
 import { BookingAuditLog } from "@/components/audit-log";
 import { BookingNotes } from "@/components/booking-notes";
+import { EventDaysEditor } from "@/components/event-days-editor";
 import { StatusTimeline } from "@/components/status-timeline";
 import { BookingAttachments } from "@/components/booking-attachments";
 import { ArrowLeft, CheckCircle, Pencil, Bell, AlertTriangle } from "lucide-react";
 import { formatTicketPriceDisplay } from "@/lib/ticket-price";
+import {
+  formatDateRange,
+  formatTimeRange,
+  type BookingDayInput,
+} from "@/lib/booking-days";
 
 type Task = {
   id: string;
@@ -49,6 +55,7 @@ type Booking = {
   eventName: string | null;
   eventDate: string | null;
   eventTime: string | null;
+  eventEndTime: string | null;
   doorsOpenTime: string | null;
   buildingAccessTime: string | null;
   hasInterval: boolean | null;
@@ -73,6 +80,7 @@ type Booking = {
   roomLayoutOther: string | null;
   setupDate: string | null;
   setupTime: string | null;
+  setupEndTime: string | null;
   setupNotes: string | null;
   applicationFormSent: boolean;
   applicationFormSentAt: string | null;
@@ -88,6 +96,7 @@ type Booking = {
   tasks: Task[];
   staffAssignments: Assignment[];
   hireLineItems: HireLine[];
+  bookingDays: { id: string; date: string; startTime: string | null; endTime: string | null; doorsOpenTime: string | null }[];
   pencilDates: { id: string; date: string; notes: string | null }[];
   attachments: { id: string; fileName: string; fileType: string; fileTypeOther: string | null; fileSize: number; createdAt: string }[];
   recurringBooking: { groupName: string } | null;
@@ -122,6 +131,26 @@ function getRoomLayoutLabel(val: string | null): string {
   return ROOM_LAYOUTS.find((l) => l.value === val)?.label || val;
 }
 
+function getEditableBookingDays(booking: Booking): BookingDayInput[] {
+  if (booking.bookingDays.length > 0) {
+    return booking.bookingDays.map((day) => ({
+      date: new Date(day.date).toISOString().split("T")[0],
+      startTime: day.startTime || "",
+      endTime: day.endTime || "",
+      doorsOpenTime: day.doorsOpenTime || "",
+    }));
+  }
+
+  return [
+    {
+      date: booking.eventDate ? new Date(booking.eventDate).toISOString().split("T")[0] : "",
+      startTime: booking.eventTime || "",
+      endTime: booking.eventEndTime || "",
+      doorsOpenTime: booking.doorsOpenTime || "",
+    },
+  ];
+}
+
 export default function BookingDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -138,6 +167,12 @@ export default function BookingDetailPage() {
   const [conflictInfo, setConflictInfo] = useState<{ conflicts: any[]; savedData: Record<string, unknown> | null }>({ conflicts: [], savedData: null });
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [confirmDays, setConfirmDays] = useState<BookingDayInput[]>([
+    { date: "", startTime: "", endTime: "", doorsOpenTime: "" },
+  ]);
+  const [editDays, setEditDays] = useState<BookingDayInput[]>([
+    { date: "", startTime: "", endTime: "", doorsOpenTime: "" },
+  ]);
 
   const fetchBooking = useCallback(async () => {
     const res = await fetch(`/api/bookings/${params.id}`);
@@ -150,6 +185,16 @@ export default function BookingDetailPage() {
   useEffect(() => {
     fetchBooking();
   }, [fetchBooking]);
+
+  useEffect(() => {
+    if (!booking) {
+      return;
+    }
+
+    const days = getEditableBookingDays(booking);
+    setConfirmDays(days);
+    setEditDays(days);
+  }, [booking]);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!booking) return <div className="p-6">Booking not found.</div>;
@@ -188,9 +233,6 @@ export default function BookingDetailPage() {
   function getConfirmData(fd: FormData, forceConfirm = false) {
     return {
       eventName: fd.get("eventName"),
-      eventDate: fd.get("eventDate"),
-      eventTime: fd.get("eventTime"),
-      doorsOpenTime: fd.get("doorsOpenTime"),
       buildingAccessTime: fd.get("buildingAccessTime"),
       hasInterval: fd.get("hasInterval") === "on",
       techRequirements: fd.get("techRequirements"),
@@ -204,6 +246,7 @@ export default function BookingDetailPage() {
       roomLayoutOther: fd.get("roomLayoutOther") || null,
       setupDate: fd.get("setupDate") || null,
       setupTime: fd.get("setupTime") || null,
+      setupEndTime: fd.get("setupEndTime") || null,
       setupNotes: fd.get("setupNotes") || null,
       chargeModel: fd.get("chargeModel"),
       boxOfficeSplitPct: fd.get("boxOfficeSplitPct"),
@@ -214,6 +257,7 @@ export default function BookingDetailPage() {
       marketingAssets: fd.get("marketingAssets") === "on",
       riskAssessment: fd.get("riskAssessment") === "on",
       insuranceProof: fd.get("insuranceProof") === "on",
+      bookingDays: confirmDays,
       forceConfirm,
     };
   }
@@ -306,9 +350,6 @@ export default function BookingDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         eventName: fd.get("eventName"),
-        eventDate: fd.get("eventDate") ? new Date(fd.get("eventDate") as string).toISOString() : null,
-        eventTime: fd.get("eventTime"),
-        doorsOpenTime: fd.get("doorsOpenTime"),
         buildingAccessTime: fd.get("buildingAccessTime"),
         hasInterval: fd.get("hasInterval") === "on",
         techRequirements: fd.get("techRequirements"),
@@ -319,6 +360,7 @@ export default function BookingDetailPage() {
         roomLayoutOther: fd.get("roomLayoutOther") || null,
         setupDate: fd.get("setupDate") ? new Date(fd.get("setupDate") as string).toISOString() : null,
         setupTime: fd.get("setupTime") || null,
+        setupEndTime: fd.get("setupEndTime") || null,
         setupNotes: fd.get("setupNotes") || null,
         chargeModel: fd.get("chargeModel"),
         boxOfficeSplitPct: fd.get("boxOfficeSplitPct") ? parseFloat(fd.get("boxOfficeSplitPct") as string) : null,
@@ -326,6 +368,7 @@ export default function BookingDetailPage() {
         barRequired: fd.get("barRequired") === "on",
         fohRequired: fd.get("fohRequired") === "on",
         stairClimberRequired: fd.get("stairClimberRequired") === "on",
+        bookingDays: editDays,
       }),
     });
 
@@ -668,20 +711,9 @@ export default function BookingDetailPage() {
                   <Label>Event Name *</Label>
                   <Input name="eventName" defaultValue={booking.eventNameTBC || ""} required />
                 </div>
-                <div className="space-y-2">
-                  <Label>Event Date *</Label>
-                  <Input name="eventDate" type="date" required />
-                </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Event Time</Label>
-                  <Input name="eventTime" type="time" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Doors Open</Label>
-                  <Input name="doorsOpenTime" type="time" />
-                </div>
+              <EventDaysEditor days={confirmDays} onChange={setConfirmDays} />
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label>Building Access</Label>
                   <Input name="buildingAccessTime" type="time" />
@@ -750,13 +782,19 @@ export default function BookingDetailPage() {
                   <Input name="setupTime" type="time" />
                 </div>
                 <div className="space-y-2">
+                  <Label>Setup End Time</Label>
+                  <Input name="setupEndTime" type="time" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Other Layout (if Other selected)</Label>
                   <Input name="roomLayoutOther" placeholder="Describe custom layout" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Setup Notes (seat-in/seat-out, etc.)</Label>
-                <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
+                <div className="space-y-2">
+                  <Label>Setup Notes (seat-in/seat-out, etc.)</Label>
+                  <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
+                </div>
               </div>
 
               {/* Charge Model */}
@@ -909,11 +947,16 @@ export default function BookingDetailPage() {
               </div>
               <div>
                 <span className="font-medium text-[var(--muted-foreground)]">Date</span>
-                <p>{booking.eventDate ? new Date(booking.eventDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "TBC"}</p>
+                <p>{formatDateRange(booking.eventDate, booking.bookingDays[booking.bookingDays.length - 1]?.date || booking.eventDate)}</p>
               </div>
               <div>
                 <span className="font-medium text-[var(--muted-foreground)]">Time</span>
-                <p>{booking.eventTime || "TBC"} {booking.doorsOpenTime && `(Doors: ${booking.doorsOpenTime})`}</p>
+                <p>
+                  {booking.bookingDays.length > 1
+                    ? "Varies by day"
+                    : formatTimeRange(booking.eventTime, booking.eventEndTime)}
+                  {booking.bookingDays.length <= 1 && booking.doorsOpenTime && ` (Doors: ${booking.doorsOpenTime})`}
+                </p>
               </div>
               {booking.buildingAccessTime && (
                 <div>
@@ -960,19 +1003,39 @@ export default function BookingDetailPage() {
                   <p>{booking.ticketSetupInfo}</p>
                 </div>
               )}
+              {booking.bookingDays.length > 0 && (
+                <div className="col-span-2">
+                  <span className="font-medium text-[var(--muted-foreground)]">Event Days</span>
+                  <div className="mt-1 space-y-1">
+                    {booking.bookingDays.map((day) => (
+                      <p key={day.id}>
+                        {new Date(day.date).toLocaleDateString("en-GB", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                        {" — "}
+                        {formatTimeRange(day.startTime, day.endTime)}
+                        {day.doorsOpenTime && ` (Doors: ${day.doorsOpenTime})`}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               {booking.roomLayout && (
                 <div>
                   <span className="font-medium text-[var(--muted-foreground)]">Room Layout</span>
                   <p>{booking.roomLayout === "OTHER" ? booking.roomLayoutOther || "Other" : getRoomLayoutLabel(booking.roomLayout)}</p>
                 </div>
               )}
-              {(booking.setupDate || booking.setupTime) && (
+              {(booking.setupDate || booking.setupTime || booking.setupEndTime) && (
                 <div>
                   <span className="font-medium text-[var(--muted-foreground)]">Setup</span>
                   <p>
                     {booking.setupDate && new Date(booking.setupDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
                     {booking.setupDate && booking.setupTime && " at "}
-                    {booking.setupTime}
+                    {formatTimeRange(booking.setupTime, booking.setupEndTime)}
                     {booking.setupNotes && ` — ${booking.setupNotes}`}
                   </p>
                 </div>
@@ -1002,25 +1065,12 @@ export default function BookingDetailPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Event Name</Label>
-                  <Input name="eventName" defaultValue={booking.eventName || ""} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Event Date</Label>
-                  <Input name="eventDate" type="date" defaultValue={booking.eventDate ? new Date(booking.eventDate).toISOString().split("T")[0] : ""} />
-                </div>
+              <div className="space-y-2">
+                <Label>Event Name</Label>
+                <Input name="eventName" defaultValue={booking.eventName || ""} />
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Event Time</Label>
-                  <Input name="eventTime" type="time" defaultValue={booking.eventTime || ""} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Doors Open</Label>
-                  <Input name="doorsOpenTime" type="time" defaultValue={booking.doorsOpenTime || ""} />
-                </div>
+              <EventDaysEditor days={editDays} onChange={setEditDays} />
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label>Building Access</Label>
                   <Input name="buildingAccessTime" type="time" defaultValue={booking.buildingAccessTime || ""} />
@@ -1056,6 +1106,10 @@ export default function BookingDetailPage() {
                 <div className="space-y-2">
                   <Label>Setup Time</Label>
                   <Input name="setupTime" type="time" defaultValue={booking.setupTime || ""} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Setup End Time</Label>
+                  <Input name="setupEndTime" type="time" defaultValue={booking.setupEndTime || ""} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

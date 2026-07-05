@@ -4,6 +4,11 @@ import { requireRole, handleApiError } from "@/lib/authorize";
 import { notifyBookingConfirmed } from "@/lib/notifications";
 import { findConflicts, overrideRecurringBooking } from "@/lib/conflicts";
 import { auditLog } from "@/lib/audit";
+import {
+  buildBookingDayCreateMany,
+  buildPrimaryBookingFields,
+  normalizeBookingDays,
+} from "@/lib/booking-days";
 import { normalizeTicketPriceInput } from "@/lib/ticket-price";
 
 export async function POST(
@@ -15,15 +20,33 @@ export async function POST(
     const { id } = await params;
 
     const data = await request.json();
+    const bookingDays = normalizeBookingDays(data.bookingDays);
+    if (bookingDays.length === 0 && data.eventDate) {
+      bookingDays.push({
+        date: String(data.eventDate),
+        startTime: String(data.eventTime ?? ""),
+        endTime: String(data.eventEndTime ?? ""),
+        doorsOpenTime: String(data.doorsOpenTime ?? ""),
+      });
+    }
 
     // Check for conflicts unless explicitly overridden
-    if (data.eventDate && !data.forceConfirm) {
-      const conflicts = await findConflicts(new Date(data.eventDate), id);
+    if (bookingDays.length > 0 && !data.forceConfirm) {
+      const conflictsByBookingId = new Map<string, Awaited<ReturnType<typeof findConflicts>>[number]>();
+
+      for (const day of bookingDays) {
+        const conflicts = await findConflicts(new Date(day.date), id);
+        for (const conflict of conflicts) {
+          conflictsByBookingId.set(conflict.id, conflict);
+        }
+      }
+
+      const conflicts = Array.from(conflictsByBookingId.values());
       if (conflicts.length > 0) {
         return NextResponse.json(
           {
             error: "conflict",
-            message: `There ${conflicts.length === 1 ? "is" : "are"} ${conflicts.length} other booking${conflicts.length === 1 ? "" : "s"} on this date.`,
+            message: `There ${conflicts.length === 1 ? "is" : "are"} ${conflicts.length} conflicting booking${conflicts.length === 1 ? "" : "s"} across the selected event days.`,
             conflicts,
           },
           { status: 409 }
@@ -53,6 +76,7 @@ export async function POST(
     const { ticketPrice, ticketPriceDisplay } = normalizeTicketPriceInput(
       data.ticketPrice
     );
+    const primaryDayFields = buildPrimaryBookingFields(bookingDays);
 
     // Update the booking with full confirmation details
     const booking = await prisma.booking.update({
@@ -60,9 +84,10 @@ export async function POST(
       data: {
         status: "CONFIRMED",
         eventName: data.eventName,
-        eventDate: data.eventDate ? new Date(data.eventDate) : null,
-        eventTime: data.eventTime || null,
-        doorsOpenTime: data.doorsOpenTime || null,
+        eventDate: primaryDayFields.eventDate,
+        eventTime: primaryDayFields.eventTime,
+        eventEndTime: primaryDayFields.eventEndTime,
+        doorsOpenTime: primaryDayFields.doorsOpenTime,
         buildingAccessTime: data.buildingAccessTime || null,
         hasInterval: data.hasInterval ?? null,
         techRequirements: data.techRequirements || null,
@@ -85,11 +110,16 @@ export async function POST(
         roomLayoutOther: data.roomLayoutOther || null,
         setupDate: data.setupDate ? new Date(data.setupDate) : null,
         setupTime: data.setupTime || null,
+        setupEndTime: data.setupEndTime || null,
         setupNotes: data.setupNotes || null,
         marketingAssets: data.marketingAssets ?? false,
         riskAssessment: data.riskAssessment ?? false,
         insuranceProof: data.insuranceProof ?? false,
         displacedPartyNotified: hasOverrides ? false : undefined,
+        bookingDays: {
+          deleteMany: {},
+          create: buildBookingDayCreateMany(bookingDays),
+        },
       },
     });
 
@@ -160,6 +190,7 @@ export async function POST(
       include: {
         tasks: true,
         staffAssignments: true,
+        bookingDays: { orderBy: [{ date: "asc" }, { sortOrder: "asc" }] },
         hireLineItems: { orderBy: { sortOrder: "asc" } },
       },
     });

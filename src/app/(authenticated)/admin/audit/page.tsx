@@ -24,6 +24,7 @@ const ACTION_COLORS: Record<string, "default" | "secondary" | "success" | "warni
   BOOKING_CLOSED: "secondary",
   STAFF_ASSIGNED: "default",
   STAFF_REMOVED: "destructive",
+  USER_LOGGED_IN: "secondary",
 };
 
 const FIELD_LABELS: Record<string, string> = {

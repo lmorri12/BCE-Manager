@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth, handleApiError } from "@/lib/authorize";
 import { auditLog, diffChanges } from "@/lib/audit";
+import {
+  buildBookingDayCreateMany,
+  buildPrimaryBookingFields,
+  normalizeBookingDays,
+} from "@/lib/booking-days";
 import { normalizeTicketPriceInput } from "@/lib/ticket-price";
 
 export async function GET(
@@ -19,6 +24,7 @@ export async function GET(
         staffAssignments: true,
         hireLineItems: { orderBy: { sortOrder: "asc" } },
         pencilDates: { orderBy: { date: "asc" } },
+        bookingDays: { orderBy: [{ date: "asc" }, { sortOrder: "asc" }] },
         attachments: { orderBy: { createdAt: "desc" }, select: { id: true, fileName: true, fileType: true, fileTypeOther: true, fileSize: true, createdAt: true } },
         overrides: { select: { id: true, eventName: true, bookerName: true } },
         recurringBooking: { select: { groupName: true } },
@@ -86,6 +92,28 @@ export async function PUT(
       data.ticketPriceDisplay = normalizedTicketPrice.ticketPriceDisplay;
     }
 
+    const rawBookingDays = Object.prototype.hasOwnProperty.call(data, "bookingDays")
+      ? data.bookingDays
+      : undefined;
+    delete data.bookingDays;
+
+    if (rawBookingDays !== undefined) {
+      const bookingDays = normalizeBookingDays(rawBookingDays);
+      if (bookingDays.length === 0 && data.eventDate) {
+        bookingDays.push({
+          date: String(data.eventDate),
+          startTime: String(data.eventTime ?? ""),
+          endTime: String(data.eventEndTime ?? ""),
+          doorsOpenTime: String(data.doorsOpenTime ?? ""),
+        });
+      }
+      Object.assign(data, buildPrimaryBookingFields(bookingDays));
+      data.bookingDays = {
+        deleteMany: {},
+        create: buildBookingDayCreateMany(bookingDays),
+      };
+    }
+
     const booking = await prisma.booking.update({
       where: { id },
       data,
@@ -94,6 +122,7 @@ export async function PUT(
         staffAssignments: true,
         hireLineItems: { orderBy: { sortOrder: "asc" } },
         pencilDates: { orderBy: { date: "asc" } },
+        bookingDays: { orderBy: [{ date: "asc" }, { sortOrder: "asc" }] },
         attachments: { orderBy: { createdAt: "desc" }, select: { id: true, fileName: true, fileType: true, fileTypeOther: true, fileSize: true, createdAt: true } },
         overrides: { select: { id: true, eventName: true, bookerName: true } },
         recurringBooking: { select: { groupName: true } },
@@ -105,6 +134,7 @@ export async function PUT(
       "status", "bookerName", "bookerEmail", "bookerPhone",
       "eventName", "eventNameTBC", "eventDate", "eventTime",
       "doorsOpenTime", "buildingAccessTime", "chargeModel", "techRequirements",
+      "eventEndTime", "setupEndTime",
       "ticketPrice", "ticketPriceDisplay", "ticketSetupInfo", "boxOfficeSplitPct",
       "techRequired", "barRequired", "fohRequired", "stairClimberRequired",
       "feedbackFormUrl", "roomLayout", "roomLayoutOther", "setupDate", "setupTime",

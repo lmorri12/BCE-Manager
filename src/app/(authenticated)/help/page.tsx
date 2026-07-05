@@ -79,6 +79,7 @@ export default function HelpPage() {
           <li><strong>Confirmed Booking</strong> — external chargeable event</li>
           <li><strong>Internal Booking</strong> — free venue use</li>
         </ul>
+        <p><strong>Multi-day events</strong> — add multiple event days within a single booking. Each day can have its own date, start time, end time, and doors-open time, and will appear separately on the calendar and rota.</p>
         <p><strong>Application form tracker</strong> — on enquiries, tick when the theatre rental form has been sent to the client.</p>
         <p><strong>Conflict detection</strong> — when confirming a booking on a date that already has events, a warning shows with the option to force-confirm or cancel recurring occurrences.</p>
         <p><strong>Cancellation</strong> — any booking can be cancelled from any active state. A reason is required and recorded in the audit log.</p>
@@ -213,7 +214,7 @@ export default function HelpPage() {
           <li>Market Style</li>
           <li>Other (free text)</li>
         </ul>
-        <p><strong>Setup date</strong> can be different from the event date (e.g. the day before). Setup time and notes (seat-in/seat-out) are also recorded. When a layout is set, a Setup task is created requiring setup volunteer assignment.</p>
+        <p><strong>Setup date</strong> can be different from the event date (e.g. the day before). Setup start time, setup end time, and notes (seat-in/seat-out) are also recorded. When a layout is set, a Setup task is created requiring setup volunteer assignment.</p>
       </Section>
 
       {isSuperUser && (

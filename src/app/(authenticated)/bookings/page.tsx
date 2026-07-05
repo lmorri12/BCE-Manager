@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDateRange, formatTimeRange } from "@/lib/booking-days";
 import { Plus } from "lucide-react";
 
 type Booking = {
@@ -19,9 +20,11 @@ type Booking = {
   eventNameTBC: string | null;
   eventDate: string | null;
   eventTime: string | null;
+  eventEndTime?: string | null;
   chargeModel: string;
   enquiryDate: string;
   tasks: { id: string; completed: boolean }[];
+  bookingDays?: { id: string; date: string; startTime: string | null; endTime: string | null }[];
   recurringBooking: { groupName: string } | null;
   createdByUser: { id: string; name: string } | null;
 };
@@ -236,16 +239,17 @@ function BookingsContent() {
                           {b.bookerName}
                         </td>
                         <td className="p-3 text-[var(--muted-foreground)]">
-                          {b.eventDate
-                            ? new Date(b.eventDate).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })
-                            : "TBC"}
+                          {formatDateRange(
+                            b.eventDate,
+                            b.bookingDays && b.bookingDays.length > 0
+                              ? b.bookingDays[b.bookingDays.length - 1].date
+                              : b.eventDate
+                          )}
                         </td>
                         <td className="p-3 text-[var(--muted-foreground)]">
-                          {b.eventTime || "TBC"}
+                          {b.bookingDays && b.bookingDays.length > 1
+                            ? "Varies by day"
+                            : formatTimeRange(b.eventTime || null, b.eventEndTime || null)}
                         </td>
                         <td className="p-3">
                           <Badge variant="outline">

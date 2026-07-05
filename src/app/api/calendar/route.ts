@@ -28,7 +28,10 @@ export async function GET(request: Request) {
     // Get confirmed/in-progress bookings with event dates in range
     const bookings = await prisma.booking.findMany({
       where: {
-        eventDate: { gte: startDate, lte: endDate },
+        OR: [
+          { bookingDays: { some: { date: { gte: startDate, lte: endDate } } } },
+          { AND: [{ eventDate: { gte: startDate, lte: endDate } }, { bookingDays: { none: {} } }] },
+        ],
         status: { not: "CLOSED" },
       },
       select: {
@@ -42,8 +45,18 @@ export async function GET(request: Request) {
         bookerName: true,
         chargeModel: true,
         recurringBookingId: true,
+        bookingDays: {
+          where: { date: { gte: startDate, lte: endDate } },
+          orderBy: [{ date: "asc" }, { sortOrder: "asc" }],
+          select: {
+            date: true,
+            startTime: true,
+            endTime: true,
+            doorsOpenTime: true,
+          },
+        },
       },
-      orderBy: [{ eventTime: "asc" }, { eventDate: "asc" }],
+      orderBy: [{ eventDate: "asc" }, { eventTime: "asc" }],
     });
 
     // Get pencil dates from enquiries in this range
@@ -83,9 +96,48 @@ export async function GET(request: Request) {
     }));
 
     const allItems = [
-      ...bookings.map((b) => ({ ...b, isPencilDate: false, pencilNotes: null })),
+      ...bookings.flatMap((booking) => {
+        if (booking.bookingDays.length > 0) {
+          return booking.bookingDays.map((day) => ({
+            id: booking.id,
+            status: booking.status,
+            eventName: booking.eventName,
+            eventNameTBC: booking.eventNameTBC,
+            eventDate: day.date.toISOString(),
+            eventTime: day.startTime,
+            doorsOpenTime: day.doorsOpenTime,
+            bookerName: booking.bookerName,
+            chargeModel: booking.chargeModel,
+            recurringBookingId: booking.recurringBookingId,
+            isPencilDate: false,
+            pencilNotes: null,
+          }));
+        }
+
+        return [{
+          id: booking.id,
+          status: booking.status,
+          eventName: booking.eventName,
+          eventNameTBC: booking.eventNameTBC,
+          eventDate: booking.eventDate?.toISOString() ?? null,
+          eventTime: booking.eventTime,
+          doorsOpenTime: booking.doorsOpenTime,
+          bookerName: booking.bookerName,
+          chargeModel: booking.chargeModel,
+          recurringBookingId: booking.recurringBookingId,
+          isPencilDate: false,
+          pencilNotes: null,
+        }];
+      }),
       ...pencilBookings,
-    ];
+    ].sort((a, b) => {
+      const dateCompare = (a.eventDate || "").localeCompare(b.eventDate || "");
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+
+      return (a.eventTime || "").localeCompare(b.eventTime || "");
+    });
 
     return NextResponse.json(allItems);
   } catch (error) {

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Calendar, ClipboardList, AlertTriangle, CheckCircle, TriangleAlert } from "lucide-react";
+import { formatDateRange, formatTimeRange } from "@/lib/booking-days";
 
 type Booking = {
   id: string;
@@ -13,10 +14,12 @@ type Booking = {
   eventNameTBC: string | null;
   eventDate: string | null;
   eventTime: string | null;
+  eventEndTime?: string | null;
   bookerName: string;
   status: string;
   chargeModel: string;
   tasks: { id: string; completed: boolean }[];
+  bookingDays?: { id: string; date: string; startTime: string | null; endTime: string | null }[];
 };
 
 type Conflict = {
@@ -67,10 +70,20 @@ export default function DashboardPage() {
         const now = new Date();
         const upcoming = bookings
           .filter(
-            (b) =>
-              b.eventDate &&
-              new Date(b.eventDate) >= now &&
-              ["CONFIRMED", "IN_PROGRESS", "READY"].includes(b.status)
+            (b) => {
+              const lastEventDate =
+                b.bookingDays && b.bookingDays.length > 0
+                  ? new Date(b.bookingDays[b.bookingDays.length - 1].date)
+                  : b.eventDate
+                    ? new Date(b.eventDate)
+                    : null;
+
+              return Boolean(
+                lastEventDate &&
+                lastEventDate >= now &&
+                ["CONFIRMED", "IN_PROGRESS", "READY"].includes(b.status)
+              );
+            }
           )
           .sort((a, b) => new Date(a.eventDate!).getTime() - new Date(b.eventDate!).getTime())
           .slice(0, 5);
@@ -302,15 +315,15 @@ export default function DashboardPage() {
                         {booking.eventName || booking.eventNameTBC || "Unnamed Event"}
                       </p>
                       <p className="text-sm text-[var(--muted-foreground)]">
-                        {booking.eventDate
-                          ? new Date(booking.eventDate).toLocaleDateString("en-GB", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Date TBC"}{" "}
-                        {booking.eventTime && `at ${booking.eventTime}`}
+                        {formatDateRange(
+                          booking.eventDate,
+                          booking.bookingDays && booking.bookingDays.length > 0
+                            ? booking.bookingDays[booking.bookingDays.length - 1].date
+                            : booking.eventDate
+                        )}{" "}
+                        {booking.bookingDays && booking.bookingDays.length > 1
+                          ? "(multi-day)"
+                          : booking.eventTime && `at ${formatTimeRange(booking.eventTime, booking.eventEndTime || null)}`}
                       </p>
                       <p className="text-sm text-[var(--muted-foreground)]">
                         Booked by: {booking.bookerName}

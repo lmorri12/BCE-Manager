@@ -19,6 +19,7 @@ export async function GET(request: Request) {
       include: {
         tasks: true,
         staffAssignments: true,
+        bookingDays: { orderBy: [{ date: "asc" }, { sortOrder: "asc" }] },
         recurringBooking: { select: { groupName: true } },
         createdByUser: { select: { id: true, name: true } },
       },

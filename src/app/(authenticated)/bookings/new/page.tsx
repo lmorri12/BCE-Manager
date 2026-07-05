@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EventDaysEditor } from "@/components/event-days-editor";
+import type { BookingDayInput } from "@/lib/booking-days";
 import { Plus, X } from "lucide-react";
 
 type BookingType = "ENQUIRY" | "CONFIRMED" | "INTERNAL";
@@ -25,6 +27,9 @@ export default function NewBookingPage() {
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [pendingConfirmData, setPendingConfirmData] = useState<Record<string, unknown> | null>(null);
+  const [eventDays, setEventDays] = useState<BookingDayInput[]>([
+    { date: prefillDate, startTime: "", endTime: "", doorsOpenTime: "" },
+  ]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,9 +98,6 @@ export default function NewBookingPage() {
       // Then confirm it with full details
       const confirmPayload = {
         eventName: fd.get("eventName"),
-        eventDate: fd.get("eventDate"),
-        eventTime: fd.get("eventTime"),
-        doorsOpenTime: fd.get("doorsOpenTime"),
         buildingAccessTime: fd.get("buildingAccessTime"),
         hasInterval: fd.get("hasInterval") === "on",
         techRequirements: fd.get("techRequirements"),
@@ -109,6 +111,7 @@ export default function NewBookingPage() {
         roomLayoutOther: fd.get("roomLayoutOther") || null,
         setupDate: fd.get("setupDate") || null,
         setupTime: fd.get("setupTime") || null,
+        setupEndTime: fd.get("setupEndTime") || null,
         setupNotes: fd.get("setupNotes") || null,
         chargeModel: isInternal ? "INTERNAL" : fd.get("chargeModel"),
         boxOfficeSplitPct: fd.get("boxOfficeSplitPct"),
@@ -119,6 +122,7 @@ export default function NewBookingPage() {
         marketingAssets: fd.get("marketingAssets") === "on",
         riskAssessment: fd.get("riskAssessment") === "on",
         insuranceProof: fd.get("insuranceProof") === "on",
+        bookingDays: eventDays,
       };
 
       const confirmRes = await fetch(`/api/bookings/${booking.id}/confirm`, {
@@ -360,25 +364,12 @@ export default function NewBookingPage() {
                   <legend className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
                     Event Details
                   </legend>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Event Name *</Label>
-                      <Input name="eventName" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Event Date *</Label>
-                      <Input name="eventDate" type="date" required defaultValue={prefillDate} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Event Name *</Label>
+                    <Input name="eventName" required />
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Event Time</Label>
-                      <Input name="eventTime" type="time" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Doors Open</Label>
-                      <Input name="doorsOpenTime" type="time" />
-                    </div>
+                  <EventDaysEditor days={eventDays} onChange={setEventDays} />
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label>Building Access</Label>
                       <Input name="buildingAccessTime" type="time" />
@@ -451,13 +442,19 @@ export default function NewBookingPage() {
                       <Input name="setupTime" type="time" />
                     </div>
                     <div className="space-y-2">
+                      <Label>Setup End Time</Label>
+                      <Input name="setupEndTime" type="time" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label>Other Layout (if Other selected)</Label>
                       <Input name="roomLayoutOther" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Setup Notes</Label>
-                    <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
+                    <div className="space-y-2">
+                      <Label>Setup Notes</Label>
+                      <Input name="setupNotes" placeholder="e.g. Seats in by 14:00, clear by 23:00" />
+                    </div>
                   </div>
                 </fieldset>
 

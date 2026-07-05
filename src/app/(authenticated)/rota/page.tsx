@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { formatTimeRange } from "@/lib/booking-days";
 import { Printer } from "lucide-react";
 
 type StaffAssignment = {
@@ -17,10 +18,12 @@ type StaffAssignment = {
 
 type RotaBooking = {
   id: string;
+  bookingId: string;
   eventName: string | null;
   eventNameTBC: string | null;
   eventDate: string;
   eventTime: string | null;
+  eventEndTime: string | null;
   bookerName: string;
   chargeModel: string;
   status: string;
@@ -138,7 +141,7 @@ export default function RotaPage() {
                       <tr
                         key={b.id}
                         className="border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[var(--muted)]"
-                        onClick={() => router.push(`/bookings/${b.id}`)}
+                        onClick={() => router.push(`/bookings/${b.bookingId}`)}
                       >
                         <td className="p-3 whitespace-nowrap">
                           {new Date(b.eventDate).toLocaleDateString("en-GB", {
@@ -148,7 +151,7 @@ export default function RotaPage() {
                           })}
                         </td>
                         <td className="p-3 text-[var(--muted-foreground)]">
-                          {b.eventTime || "—"}
+                          {formatTimeRange(b.eventTime, b.eventEndTime)}
                         </td>
                         <td className="p-3 font-medium">
                           {b.eventName || b.eventNameTBC || "Unnamed"}
