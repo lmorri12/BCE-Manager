@@ -38,17 +38,26 @@ export default function DashboardPage() {
   const [myTasks, setMyTasks] = useState<Booking[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hideInternal, setHideInternal] = useState(false);
 
   useEffect(() => {
     async function load() {
+      setError(null);
       const [bookingsRes, conflictsRes] = await Promise.all([
         fetch("/api/bookings"),
         fetch("/api/bookings/conflicts"),
       ]);
 
       if (bookingsRes.ok) {
-        const bookings: Booking[] = await bookingsRes.json();
+        const bookingsData = await bookingsRes.json();
+        if (!Array.isArray(bookingsData)) {
+          setError("Bookings response was invalid");
+          setLoading(false);
+          return;
+        }
+
+        const bookings: Booking[] = bookingsData;
         setStats({
           enquiry: bookings.filter((b) => b.status === "ENQUIRY").length,
           confirmed: bookings.filter((b) => b.status === "CONFIRMED").length,
@@ -88,13 +97,21 @@ export default function DashboardPage() {
           });
           setMyTasks(needingAttention);
         }
+      } else {
+        const data = await bookingsRes.json();
+        setError(data.error || "Failed to load dashboard bookings");
       }
 
       if (conflictsRes.ok) {
-        const allConflicts: Conflict[] = await conflictsRes.json();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        setConflicts(allConflicts.filter((c) => new Date(c.date) >= today));
+        const conflictsData = await conflictsRes.json();
+        if (Array.isArray(conflictsData)) {
+          const allConflicts: Conflict[] = conflictsData;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          setConflicts(allConflicts.filter((c) => new Date(c.date) >= today));
+        } else if (!error) {
+          setError("Conflict response was invalid");
+        }
       }
 
       setLoading(false);
@@ -105,6 +122,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return <div className="p-6 text-[var(--muted-foreground)]">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-[var(--destructive)]">{error}</div>;
   }
 
   return (

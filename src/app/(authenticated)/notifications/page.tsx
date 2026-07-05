@@ -19,6 +19,7 @@ export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState<"read" | "all" | null>(null);
 
   useEffect(() => {
     fetch("/api/notifications")
@@ -45,17 +46,67 @@ export default function NotificationsPage() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
+  async function clearNotifications(scope: "read" | "all") {
+    const message =
+      scope === "read"
+        ? "Clear all read notifications?"
+        : "Clear all notifications?";
+
+    if (!confirm(message)) {
+      return;
+    }
+
+    setClearing(scope);
+
+    const res = await fetch(`/api/notifications?scope=${scope}`, {
+      method: "DELETE",
+    });
+
+    setClearing(null);
+
+    if (!res.ok) {
+      return;
+    }
+
+    setNotifications((prev) =>
+      scope === "read" ? prev.filter((n) => !n.read) : []
+    );
+  }
+
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const readCount = notifications.length - unreadCount;
 
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Notifications</h1>
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllRead}>
-            Mark all as read ({unreadCount})
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {readCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => clearNotifications("read")}
+              disabled={clearing !== null}
+            >
+              {clearing === "read" ? "Clearing..." : `Clear read (${readCount})`}
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => clearNotifications("all")}
+              disabled={clearing !== null}
+            >
+              {clearing === "all" ? "Clearing..." : `Clear all (${notifications.length})`}
+            </Button>
+          )}
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={markAllRead} disabled={clearing !== null}>
+              Mark all as read ({unreadCount})
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

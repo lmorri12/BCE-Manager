@@ -69,20 +69,46 @@ function BookingsContent() {
   const canCreate = session?.user?.role !== "TRUSTEE";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hideInternal, setHideInternal] = useState(false);
   const [search, setSearch] = useState("");
 
   const activeTab = searchParams.get("status") || "ALL";
 
   useEffect(() => {
-    const url =
-      activeTab === "ALL" ? "/api/bookings" : `/api/bookings?status=${activeTab}`;
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
+    async function loadBookings() {
+      setLoading(true);
+      setError(null);
+
+      const url =
+        activeTab === "ALL" ? "/api/bookings" : `/api/bookings?status=${activeTab}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setBookings([]);
+          setError(data.error || "Failed to load bookings");
+          return;
+        }
+
+        if (!Array.isArray(data)) {
+          setBookings([]);
+          setError("Bookings response was invalid");
+          return;
+        }
+
         setBookings(data);
+      } catch {
+        setBookings([]);
+        setError("Failed to load bookings");
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    loadBookings();
   }, [activeTab]);
 
   function handleTabChange(value: string) {
@@ -141,6 +167,10 @@ function BookingsContent() {
           {loading ? (
             <div className="p-6 text-center text-[var(--muted-foreground)]">
               Loading...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center text-[var(--destructive)]">
+              {error}
             </div>
           ) : bookings.filter((b) => {
                     if (hideInternal && b.chargeModel === "INTERNAL") return false;

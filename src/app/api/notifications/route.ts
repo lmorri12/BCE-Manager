@@ -22,3 +22,22 @@ export async function GET(request: Request) {
     return handleApiError(error);
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await requireAuth();
+    const { searchParams } = new URL(request.url);
+    const scope = searchParams.get("scope");
+
+    const where =
+      scope === "read"
+        ? { userId: session.user.id, read: true }
+        : { userId: session.user.id };
+
+    const result = await prisma.notification.deleteMany({ where });
+
+    return NextResponse.json({ success: true, deletedCount: result.count });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
