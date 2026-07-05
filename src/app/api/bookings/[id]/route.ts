@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth, handleApiError } from "@/lib/authorize";
 import { auditLog, diffChanges } from "@/lib/audit";
+import { normalizeTicketPriceInput } from "@/lib/ticket-price";
 
 export async function GET(
   _request: Request,
@@ -79,6 +80,12 @@ export async function PUT(
     delete data.createdByUser;
     delete data.createdByUserId;
 
+    if (Object.prototype.hasOwnProperty.call(data, "ticketPrice")) {
+      const normalizedTicketPrice = normalizeTicketPriceInput(data.ticketPrice);
+      data.ticketPrice = normalizedTicketPrice.ticketPrice;
+      data.ticketPriceDisplay = normalizedTicketPrice.ticketPriceDisplay;
+    }
+
     const booking = await prisma.booking.update({
       where: { id },
       data,
@@ -98,8 +105,10 @@ export async function PUT(
       "status", "bookerName", "bookerEmail", "bookerPhone",
       "eventName", "eventNameTBC", "eventDate", "eventTime",
       "doorsOpenTime", "buildingAccessTime", "chargeModel", "techRequirements",
+      "ticketPrice", "ticketPriceDisplay", "ticketSetupInfo", "boxOfficeSplitPct",
       "techRequired", "barRequired", "fohRequired", "stairClimberRequired",
-      "feedbackFormUrl", "roomLayout", "roomLayoutOther", "setupTime",
+      "feedbackFormUrl", "roomLayout", "roomLayoutOther", "setupDate", "setupTime",
+      "setupNotes",
       "applicationFormSent", "displacedPartyNotified",
     ];
     const changes = before ? diffChanges(before as any, booking as any, trackFields) : null;

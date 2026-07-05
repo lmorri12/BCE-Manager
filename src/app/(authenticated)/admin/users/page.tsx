@@ -83,7 +83,7 @@ export default function UsersPage() {
                     </td>
                     <td className="py-3">
                       <Badge variant={user.active ? "success" : "destructive"}>
-                        {user.active ? "Active" : "Inactive"}
+                        {user.active ? "Active" : "Archived"}
                       </Badge>
                       {user.mustChangePassword && (
                         <Badge variant="warning" className="ml-2">

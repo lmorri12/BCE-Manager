@@ -16,6 +16,7 @@ import { BookingNotes } from "@/components/booking-notes";
 import { StatusTimeline } from "@/components/status-timeline";
 import { BookingAttachments } from "@/components/booking-attachments";
 import { ArrowLeft, CheckCircle, Pencil, Bell, AlertTriangle } from "lucide-react";
+import { formatTicketPriceDisplay } from "@/lib/ticket-price";
 
 type Task = {
   id: string;
@@ -53,6 +54,7 @@ type Booking = {
   hasInterval: boolean | null;
   techRequirements: string | null;
   ticketPrice: string | null;
+  ticketPriceDisplay: string | null;
   ticketSetupInfo: string | null;
   techContactName: string | null;
   techContactPhone: string | null;
@@ -107,6 +109,7 @@ const ROOM_LAYOUTS = [
   { value: "", label: "Not set" },
   { value: "RAKED_100", label: "Raked Seating 100" },
   { value: "RAKED_114", label: "Raked Seating 114" },
+  { value: "FLAT_FLOOR_STANDING_135", label: "Flat Floor Standing 135" },
   { value: "CABARET_LARGE", label: "Cabaret - Large Round Tables" },
   { value: "CABARET_SMALL", label: "Cabaret - Small Round Tables" },
   { value: "CABARET_TRESSLE", label: "Cabaret - Tressle Tables" },
@@ -309,7 +312,8 @@ export default function BookingDetailPage() {
         buildingAccessTime: fd.get("buildingAccessTime"),
         hasInterval: fd.get("hasInterval") === "on",
         techRequirements: fd.get("techRequirements"),
-        ticketPrice: fd.get("ticketPrice") ? parseFloat(fd.get("ticketPrice") as string) : null,
+        ticketPrice: fd.get("ticketPrice"),
+        ticketSetupInfo: fd.get("ticketSetupInfo"),
         feedbackFormUrl: fd.get("feedbackFormUrl"),
         roomLayout: fd.get("roomLayout") || null,
         roomLayoutOther: fd.get("roomLayoutOther") || null,
@@ -716,8 +720,8 @@ export default function BookingDetailPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Ticket Price (£)</Label>
-                  <Input name="ticketPrice" type="number" step="0.01" min="0" />
+                  <Label>Ticket Price / Range</Label>
+                  <Input name="ticketPrice" placeholder="e.g. 10 or 7-10" />
                 </div>
                 <div className="space-y-2">
                   <Label>Ticket Setup Info</Label>
@@ -948,8 +952,14 @@ export default function BookingDetailPage() {
               </div>
               <div>
                 <span className="font-medium text-[var(--muted-foreground)]">Ticket Price</span>
-                <p>{booking.ticketPrice ? `£${Number(booking.ticketPrice).toFixed(2)}` : "N/A"}</p>
+                <p>{formatTicketPriceDisplay(booking.ticketPriceDisplay, booking.ticketPrice)}</p>
               </div>
+              {booking.ticketSetupInfo && (
+                <div className="col-span-2">
+                  <span className="font-medium text-[var(--muted-foreground)]">Ticket Setup Info</span>
+                  <p>{booking.ticketSetupInfo}</p>
+                </div>
+              )}
               {booking.roomLayout && (
                 <div>
                   <span className="font-medium text-[var(--muted-foreground)]">Room Layout</span>
@@ -1068,9 +1078,21 @@ export default function BookingDetailPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Ticket Price (£)</Label>
-                  <Input name="ticketPrice" type="number" step="0.01" defaultValue={booking.ticketPrice ? Number(booking.ticketPrice) : ""} />
+                  <Label>Ticket Price / Range</Label>
+                  <Input
+                    name="ticketPrice"
+                    defaultValue={booking.ticketPriceDisplay || (booking.ticketPrice ? String(Number(booking.ticketPrice)) : "")}
+                    placeholder="e.g. 10 or 7-10"
+                  />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Ticket Setup Info</Label>
+                <Input
+                  name="ticketSetupInfo"
+                  defaultValue={booking.ticketSetupInfo || ""}
+                  placeholder="Pricing tiers, concessions, etc."
+                />
               </div>
               <div className="space-y-2">
                 <Label>Box Office Split %</Label>

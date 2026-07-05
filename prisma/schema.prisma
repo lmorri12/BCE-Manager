@@ -110,6 +110,7 @@ model Booking {
   hasInterval        Boolean?
   techRequirements   String?   @db.Text
   ticketPrice        Decimal?  @db.Decimal(10, 2)
+  ticketPriceDisplay String?
   ticketSetupInfo    String?   @db.Text
   techContactName    String?
   techContactPhone   String?

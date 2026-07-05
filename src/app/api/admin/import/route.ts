@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireRole, handleApiError } from "@/lib/authorize";
 import { auditLog } from "@/lib/audit";
+import { normalizeTicketPriceInput } from "@/lib/ticket-price";
 
 export async function POST(request: Request) {
   try {
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
         const status = validStatuses.includes(statusRaw) ? statusRaw : eventDate ? "CONFIRMED" : "ENQUIRY";
 
         const yesNo = (val: string) => val.toLowerCase() === "yes" || val === "true" || val === "1";
+        const ticketPriceValue = get(ticketPriceIdx);
+        const normalizedTicketPrice = normalizeTicketPriceInput(ticketPriceValue);
 
         await prisma.booking.create({
           data: {
@@ -84,7 +87,8 @@ export async function POST(request: Request) {
             barRequired: barRequiredIdx >= 0 ? yesNo(get(barRequiredIdx)) : true,
             fohRequired: fohRequiredIdx >= 0 ? yesNo(get(fohRequiredIdx)) : true,
             techRequirements: get(techRequirementsIdx) || null,
-            ticketPrice: get(ticketPriceIdx) ? parseFloat(get(ticketPriceIdx)) : null,
+            ticketPrice: normalizedTicketPrice.ticketPrice,
+            ticketPriceDisplay: normalizedTicketPrice.ticketPriceDisplay,
             boxOfficeSplitPct: get(boxOfficeIdx) ? parseFloat(get(boxOfficeIdx)) : null,
             createdByUserId: session.user.id,
           },

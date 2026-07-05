@@ -4,6 +4,7 @@ import { requireRole, handleApiError } from "@/lib/authorize";
 import { notifyBookingConfirmed } from "@/lib/notifications";
 import { findConflicts, overrideRecurringBooking } from "@/lib/conflicts";
 import { auditLog } from "@/lib/audit";
+import { normalizeTicketPriceInput } from "@/lib/ticket-price";
 
 export async function POST(
   request: Request,
@@ -49,6 +50,9 @@ export async function POST(
     const barRequired = data.barRequired ?? true;
     const fohRequired = data.fohRequired ?? true;
     const stairClimberRequired = data.stairClimberRequired ?? false;
+    const { ticketPrice, ticketPriceDisplay } = normalizeTicketPriceInput(
+      data.ticketPrice
+    );
 
     // Update the booking with full confirmation details
     const booking = await prisma.booking.update({
@@ -62,7 +66,8 @@ export async function POST(
         buildingAccessTime: data.buildingAccessTime || null,
         hasInterval: data.hasInterval ?? null,
         techRequirements: data.techRequirements || null,
-        ticketPrice: data.ticketPrice ? parseFloat(data.ticketPrice) : null,
+        ticketPrice,
+        ticketPriceDisplay,
         ticketSetupInfo: data.ticketSetupInfo || null,
         techContactName: data.techContactName || null,
         techContactPhone: data.techContactPhone || null,

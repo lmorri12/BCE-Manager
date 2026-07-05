@@ -29,6 +29,7 @@ export default function EditUserPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
 
   useEffect(() => {
@@ -71,6 +72,37 @@ export default function EditUserPage() {
     } else {
       router.push("/admin/users");
     }
+  }
+
+  async function handleDelete() {
+    if (!user) {
+      return;
+    }
+
+    if (
+      !confirm(
+        `Archive ${user.name}? They will no longer be able to sign in, but historical records will be preserved.`
+      )
+    ) {
+      return;
+    }
+
+    setError(null);
+    setDeleting(true);
+
+    const res = await fetch(`/api/admin/users/${params.id}`, {
+      method: "DELETE",
+    });
+
+    setDeleting(false);
+
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Failed to archive user");
+      return;
+    }
+
+    router.push("/admin/users");
   }
 
   return (
@@ -143,15 +175,25 @@ export default function EditUserPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || deleting}>
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/admin/users")}
+                disabled={loading || deleting}
               >
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading || deleting || !user.active}
+                className="ml-auto"
+              >
+                {!user.active ? "Archived" : deleting ? "Archiving..." : "Archive User"}
               </Button>
             </div>
           </form>

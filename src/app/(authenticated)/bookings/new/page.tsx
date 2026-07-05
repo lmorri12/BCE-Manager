@@ -432,6 +432,7 @@ export default function NewBookingPage() {
                         <option value="">Not set</option>
                         <option value="RAKED_100">Raked Seating 100</option>
                         <option value="RAKED_114">Raked Seating 114</option>
+                        <option value="FLAT_FLOOR_STANDING_135">Flat Floor Standing 135</option>
                         <option value="CABARET_LARGE">Cabaret - Large Round Tables</option>
                         <option value="CABARET_SMALL">Cabaret - Small Round Tables</option>
                         <option value="CABARET_TRESSLE">Cabaret - Tressle Tables</option>
@@ -520,8 +521,8 @@ export default function NewBookingPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Ticket Price (£)</Label>
-                        <Input name="ticketPrice" type="number" step="0.01" min="0" />
+                        <Label>Ticket Price / Range</Label>
+                        <Input name="ticketPrice" placeholder="e.g. 10 or 7-10" />
                       </div>
                       <div className="space-y-2">
                         <Label>Ticket Setup Info</Label>

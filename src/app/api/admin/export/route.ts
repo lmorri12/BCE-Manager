@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireRole, handleApiError } from "@/lib/authorize";
+import { formatTicketPriceDisplay } from "@/lib/ticket-price";
 
 export async function GET() {
   try {
@@ -38,7 +39,7 @@ export async function GET() {
         b.doorsOpenTime || "",
         b.chargeModel,
         b.boxOfficeSplitPct ? String(b.boxOfficeSplitPct) : "",
-        b.ticketPrice ? String(b.ticketPrice) : "",
+        formatTicketPriceDisplay(b.ticketPriceDisplay, b.ticketPrice),
         b.techRequired ? "Yes" : "No",
         b.barRequired ? "Yes" : "No",
         b.fohRequired ? "Yes" : "No",

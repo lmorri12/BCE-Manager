@@ -206,6 +206,7 @@ export default function HelpPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li>Raked Seating 100</li>
           <li>Raked Seating 114</li>
+          <li>Flat Floor Standing 135</li>
           <li>Cabaret — Large Round Tables</li>
           <li>Cabaret — Small Round Tables</li>
           <li>Cabaret — Tressle Tables</li>
