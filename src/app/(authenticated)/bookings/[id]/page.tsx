@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,6 +173,7 @@ export default function BookingDetailPage() {
   const [editDays, setEditDays] = useState<BookingDayInput[]>([
     { date: "", startTime: "", endTime: "", doorsOpenTime: "" },
   ]);
+  const confirmFormRef = useRef<HTMLDivElement | null>(null);
 
   const fetchBooking = useCallback(async () => {
     const res = await fetch(`/api/bookings/${params.id}`);
@@ -195,6 +196,12 @@ export default function BookingDetailPage() {
     setConfirmDays(days);
     setEditDays(days);
   }, [booking]);
+
+  useEffect(() => {
+    if (showConfirmForm) {
+      confirmFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showConfirmForm]);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!booking) return <div className="p-6">Booking not found.</div>;
@@ -700,7 +707,7 @@ export default function BookingDetailPage() {
 
       {/* Confirmation Form */}
       {!isReadOnly && (showConfirmForm || (isEnquiry && showConfirmForm)) && (
-        <Card>
+        <Card ref={confirmFormRef}>
           <CardHeader>
             <CardTitle>Confirm Booking — Full Details</CardTitle>
           </CardHeader>
